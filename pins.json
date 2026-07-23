@@ -1,0 +1,32 @@
+[
+{
+    "appId": "org.gnome.Nautilus",
+    "name": "Files",
+    "exec": "nautilus",
+    "icon": "org.gnome.Nautilus"
+  },
+  {
+      "appId": "floorp",
+      "name": "Floorp Browser",
+      "exec": "floorp",
+      "icon": "floorp"
+    },
+{
+    "appId": "Arduino IDE",
+    "name": "Arduino IDE v2",
+    "exec": "arduino-ide",
+    "icon": "arduino-ide-v2"
+  },
+  {
+    "appId": "obsidian",
+    "name": "Obsidian",
+    "exec": "obsidian",
+    "icon": "obsidian"
+  },
+    {
+    "appId": "TelegramDesktop",
+    "name": "Telegram",
+    "exec": "Telegram --",
+    "icon": "org.telegram.desktop"
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "accent":         "##d6bbfb",
+  "accentDim":      "##523c73",
+  "accentOnDim":    "##eddcff",
+  "bgBase":         "##151218",
+  "bgSurface":      "##211e24",
+  "bgElevated":     "##2c292f",
+  "bgHover":        "##37333a",
+  "textPrimary":    "##e7e0e8",
+  "textSecondary":  "##cbc4cf",
+  "danger":         "##ffb4ab",
+  "success":        "##f2b7c2",
+  "outline":        "##958e99"
+}
