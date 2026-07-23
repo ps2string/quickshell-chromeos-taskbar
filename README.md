@@ -1,2 +1,21 @@
 # ChromeOS Taskbar (Quickshell)
-A simple quickshell configuration that looks like chromeOS panel
+A simple quickshell configuration that looks like chromeOS panel (not fully functional as of now).
+
+> [!INFO]
+> This is strictly speaking, hyprland's only quickshell configuration (for now), so do not expect it to work outside the environment, you may try, but I won't guarantee a fully functional bar.
+> I haven't implemented a settings GUI app yet, going to have it soon in the future.
+
+
+## What you'll need (Dependencies)
+1. Hyprland (obviously)
+2. Quickshell
+3. NetworkManager (or NetworkManager with iwd backend for some of y'all)
+4. Hyprsunset (for night light)
+5. Bluetooth daemon (optional)
+
+## What you need to do?
+1. First, go to the prefered directory to clone this repository (i.e Downloads.
+2. Then run `git clone https://github.com/ps2string/quickshell-chromeos-taskbar`
+3. After that, create a new folder inside ~/.config named `quickshell`
+4. Move the contents inside the cloned directory inside the new folder
+5. Run quickshell (either with `qs` or just `quickshell`)
