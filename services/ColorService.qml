@@ -11,7 +11,6 @@ pragma Singleton
 Item {
     id: root
 
-    // --- Dynamic theme colors (updated from colors.json via matugen) ---
     property color accent:        "#8ab4f8"
     property color accentDim:     "#283b5b"
     property color accentOnDim:   "#c0d8ff"
@@ -25,11 +24,9 @@ Item {
     property color success:       "#81c995"
     property color outline:       "#6b7280"
 
-    // --- Fonts ---
     readonly property string fontMain: "SF Pro Rounded"
     readonly property string fontIcon: "JetBrainsMono Nerd Font"
 
-    // --- Geometry ---
     readonly property int radiusSmall:  8
     readonly property int radiusMedium: 16
     readonly property int radiusLarge:  24
@@ -43,7 +40,6 @@ Item {
         onTextChanged: root._parseColors(colorFile.text)
     }
 
-    // Seed parse on startup
     Component.onCompleted: {
         if (colorFile.text && colorFile.text.length > 5)
             root._parseColors(colorFile.text);
