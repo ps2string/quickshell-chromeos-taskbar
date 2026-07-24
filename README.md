@@ -17,6 +17,6 @@ A simple quickshell configuration that looks like chromeOS panel (not fully func
 ## What you need to do?
 1. First, go to the prefered directory to clone this repository (i.e Downloads.
 2. Then run `git clone https://github.com/ps2string/quickshell-chromeos-taskbar`
-3. After that, create a new folder inside ~/.config named `quickshell`
+3. After that, create a new folder inside `~/.config` named `quickshell`
 4. Move the contents inside the cloned directory inside the new folder
 5. Run quickshell (either with `qs` or just `quickshell`)
