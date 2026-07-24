@@ -2,7 +2,7 @@
 A simple quickshell configuration that looks like chromeOS panel (not fully functional as of now).
 
 > [!NOTE]
-> This is strictly speaking, hyprland's only quickshell configuration (for now), so do not expect it to work outside the environment, you may try, but I won't guarantee a fully functional bar.
+> Strictly speaking, this is a hyprland's only quickshell configuration (for now) so, do not expect it to work outside the environment, you may try, but I won't guarantee a fully functional bar.
 > I haven't implemented a settings GUI app yet, going to have it soon in the future.
 > Right now, pressing super key shouldn't work on normal PC keyboard type (as this is specifically targeting Chromebooks, I will add it in the future update of changing the main key to open the start menu.)
 
