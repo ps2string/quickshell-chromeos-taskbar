@@ -20,3 +20,6 @@ A simple quickshell configuration that looks like chromeOS panel (not fully func
 3. After that, create a new folder inside `~/.config` named `quickshell`
 4. Move the contents inside the cloned directory inside the new folder
 5. Run quickshell (either with `qs` or just `quickshell`)
+
+## Preview
+![image](https://raw.githubusercontent.com/ps2string/quickshell-chromeos-taskbar/refs/heads/main/assets/20260724_105123.png)
