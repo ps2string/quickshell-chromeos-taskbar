@@ -14,17 +14,15 @@ Item {
     property int    batteryLevel:  100
     property bool   isCharging:    false
     property string wifiSsid:      "Disconnected"
-    property bool   wifiConnected: false  // true = associated to an AP
-    property bool   wifiEnabled:   false  // true = radio is on (may not be connected)
+    property bool   wifiConnected: false
+    property bool   wifiEnabled:   false 
     property bool   bluetoothOn:   true
     property bool   dndActive:     false
     property bool   nightLightOn:  false
 
-    // Night-light shader path (absolute, computed relative to this file's location)
     readonly property string _nightLightShader: Qt.resolvedUrl("../../hypr/modules/shaders/nightlight.glsl").toString().replace("file://", "")
 
     signal showOsd(string icon, string title, real val, bool muted)
-    // emitted after a connectWifi() call; success=true on association, message = nmcli output
     signal wifiConnectResult(bool success, string message)
 
     property var  wifiNetworks:      []
@@ -34,13 +32,11 @@ Item {
     property var  bluetoothDevices: []
     property bool isScanningBt:     false
 
-    // track last known values to detect external changes
     property int _lastVolume:      -1
     property bool _lastMuted:       false
     property int _lastBrightness:  -1
     property int _maxBrightness:   19200
 
-    // --- Volume: watch via rapid poll, emit OSD when value changes externally ---
     Process {
         id: volGet
         command: ["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"]
@@ -66,7 +62,6 @@ Item {
         }
     }
 
-    // Rapid volume poll — runs every 200ms to catch keybind presses quickly
     Timer {
         id: volPollTimer
         interval: 200
@@ -75,7 +70,6 @@ Item {
         onTriggered: volGet.running = true
     }
 
-    // --- Brightness: poll via cat (sysfs is a virtual FS — inotify/watchChanges never fires on it) ---
     Process {
         id: brightGet
         command: ["cat", "/sys/class/backlight/intel_backlight/actual_brightness"]
@@ -96,7 +90,6 @@ Item {
         }
     }
 
-    // Rapid brightness poll — 200ms, same as volume
     Timer {
         id: brightPollTimer
         interval: 200
@@ -105,7 +98,6 @@ Item {
         onTriggered: brightGet.running = true
     }
 
-    // --- Battery ---
     Process {
         id: batGet
         command: ["cat", "/sys/class/power_supply/BAT0/capacity"]
@@ -128,11 +120,8 @@ Item {
         }
     }
 
-    // --- Wi-Fi ---
-    // Polls connection status only — never resets wifiEnabled
     Process {
         id: wifiGet
-        // Use nmcli to check radio state AND current association separately
         command: ["bash", "-c",
             "radio=$(nmcli -t -f WIFI radio | head -1); " +
             "nmcli -t -f ACTIVE,SSID dev wifi 2>/dev/null; " +
@@ -142,7 +131,7 @@ Item {
             onStreamFinished: {
                 let lines = this.text.split("\n");
                 let found = false;
-                let radioEnabled = true; // assume on unless explicitly told off
+                let radioEnabled = true;
                 for (let line of lines) {
                     if (line.startsWith("__RADIO__")) {
                         radioEnabled = line.substring(9).trim() !== "disabled";
@@ -158,8 +147,6 @@ Item {
                     if (!radioEnabled) {
                         root.wifiSsid = "Disconnected";
                     } else {
-                        // Radio is on but not associated — preserve last SSID label
-                        // so we don't flicker "Disconnected" while scanning
                         root.wifiSsid = "Not connected";
                     }
                 }
@@ -167,10 +154,8 @@ Item {
         }
     }
 
-    // Scan process — only lists networks, never touches wifiConnected
     Process {
         id: wifiScanProc
-        // rescan then list; pipe stderr to /dev/null so rescan errors are silent
         command: ["bash", "-c",
             "nmcli dev wifi rescan 2>/dev/null; " +
             "nmcli -t -f IN-USE,SSID,SIGNAL,SECURITY dev wifi list 2>/dev/null"]
@@ -180,7 +165,6 @@ Item {
                 let list = [];
                 let seen = {};
                 for (let line of lines) {
-                    // nmcli uses ':' as separator; SSID can contain ':' so split on first 3 only
                     let idx0 = line.indexOf(":");
                     if (idx0 < 0) continue;
                     let idx1 = line.indexOf(":", idx0 + 1);
@@ -200,13 +184,11 @@ Item {
                 list.sort((a, b) => (b.inUse ? 1 : 0) - (a.inUse ? 1 : 0) || (b.signal - a.signal));
                 root.wifiNetworks = list;
                 root.isScanningWifi = false;
-                // Refresh connection status after scan completes (without flipping wifiEnabled)
                 wifiGet.running = true;
             }
         }
     }
 
-    // Connect process — captures stdout AND stderr so we can report success/error
     Process {
         id: wifiConnectProc
         property string _targetSsid: ""
@@ -214,22 +196,17 @@ Item {
         stderr: StdioCollector { id: wifiConnectStderr }
         onRunningChanged: {
             if (!running) {
-                // exitCode 0 = success, anything else = failure
                 let out = wifiConnectStdout.text.trim();
                 let err = wifiConnectStderr.text.trim();
                 let combined = (out + " " + err).trim();
 
-                // nmcli prints "Device '...' successfully activated" on success
                 let ok = exitCode === 0 || combined.toLowerCase().includes("successfully activated");
 
-                // Extract a clean human-readable message
                 let msg = "";
                 if (ok) {
                     msg = "Connected to " + wifiConnectProc._targetSsid;
                 } else {
-                    // Strip nmcli boilerplate; surface only the actual error
                     let errLine = err.length > 0 ? err : out;
-                    // e.g. "Error: Connection activation failed." or "Error: No network with SSID..."
                     let match = errLine.match(/Error:\s*(.+)/i);
                     msg = match ? match[1].trim() : (errLine.length > 0 ? errLine : "Connection failed");
                     if (msg.length > 80) msg = msg.substring(0, 80) + "…";
@@ -238,10 +215,8 @@ Item {
                 root.isConnectingWifi = false;
                 root.wifiConnectResult(ok, msg);
 
-                // Refresh state after connection attempt
                 wifiGet.running = true;
                 if (ok) {
-                    // Give NetworkManager a moment then rescan to update the list
                     wifiRefreshTimer.start();
                 }
             }
@@ -258,7 +233,6 @@ Item {
         }
     }
 
-    // --- Bluetooth ---
     Process {
         id: btCheck
         command: ["bash", "-c", "rfkill list bluetooth | grep -q 'Soft blocked: no' && echo 'on' || echo 'off'"]
@@ -293,14 +267,12 @@ Item {
         }
     }
 
-    // Action processes
     Process { id: setVolProc }
     Process { id: setBrightProc }
     Process { id: setWifiProc }
     Process { id: setBtProc }
     Process { id: setNightLightProc }
 
-    // DND state reader — queries swaync for actual state
     Process {
         id: dndGetProc
         command: ["swaync-client", "--get-dnd"]
@@ -312,7 +284,6 @@ Item {
         }
     }
 
-    // Night Light state reader — checks if hyprsunset is running
     Process {
         id: nightLightGetProc
         command: ["bash", "-c", "pgrep -x hyprsunset >/dev/null && echo 'on' || echo 'off'"]
@@ -323,7 +294,6 @@ Item {
         }
     }
 
-    // Periodic refresh (every 5s)
     Timer {
         interval: 5000
         running: true
@@ -331,24 +301,21 @@ Item {
         onTriggered: root.refresh()
     }
 
-    // Initial state sync on startup
     Component.onCompleted: {
         dndGetProc.running = true;
         nightLightGetProc.running = true;
     }
 
-    // Public refresh function (called by QuickSettings on open)
     function refresh() {
         volGet.running            = true;
         batGet.running            = true;
         batStatus.running         = true;
         wifiGet.running           = true;
         btCheck.running           = true;
-        dndGetProc.running        = true;  // sync DND state from swaync
-        nightLightGetProc.running = true;  // sync Night Light state
+        dndGetProc.running        = true; 
+        nightLightGetProc.running = true; 
     }
 
-    // --- Control functions ---
     function setVolume(val) {
         // volume OSD fires automatically via volPollTimer detecting the change
         root.volume = Math.max(0, Math.min(100, Math.round(val)));
@@ -361,11 +328,9 @@ Item {
         let p = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
         p.command = ["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"];
         p.running = true;
-        // poll will detect change and fire OSD
     }
 
     function setBrightness(val) {
-        // brightness OSD fires automatically via FileView watcher detecting sysfs change
         root.brightness = Math.max(5, Math.min(100, Math.round(val)));
         let p = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
         p.command = ["brightnessctl", "s", root.brightness + "%"];
@@ -373,8 +338,6 @@ Item {
     }
 
     function toggleWifi() {
-        // Toggle the radio — never touch wifiConnected directly here;
-        // the polling in wifiGet will update it after the state change.
         let turnOn = !root.wifiEnabled;
         setWifiProc.command = ["nmcli", "radio", "wifi", turnOn ? "on" : "off"];
         setWifiProc.running = true;
@@ -387,7 +350,6 @@ Item {
     }
 
     function scanWifi() {
-        // Turn radio on if it's off, then scan — never set wifiConnected here
         if (!root.wifiEnabled) {
             setWifiProc.command = ["nmcli", "radio", "wifi", "on"];
             setWifiProc.running = true;
@@ -398,7 +360,7 @@ Item {
     }
 
     function connectWifi(ssid, password) {
-        if (root.isConnectingWifi) return; // prevent double-taps
+        if (root.isConnectingWifi) return;
         root.isConnectingWifi = true;
         wifiConnectProc._targetSsid = ssid;
         if (password && password.length > 0) {
@@ -445,12 +407,10 @@ Item {
     }
 
     function toggleDnd() {
-        // Optimistically flip local state, then let swaync confirm via re-read
         root.dndActive = !root.dndActive;
         let swayncProc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
         swayncProc.command = ["swaync-client", "--toggle-dnd"];
         swayncProc.running = true;
-        // Re-read state after a short delay to confirm
         let t = Qt.createQmlObject('import QtQuick; Timer { interval: 600; repeat: false }', root);
         t.triggered.connect(() => { dndGetProc.running = true; });
         t.start();
