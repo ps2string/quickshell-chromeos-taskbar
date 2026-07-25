@@ -52,6 +52,20 @@ output_path = "~/.config/quickshell/colors.json"
 
 ```
 
+## Additional Notes
+- In order to open the start menu via keyboard keys (or via anything in that matter) I've also prepared quickshell native IPC calls that can be used in hyprland:
+
+```terminal
+target launcher
+  function open(): void
+  function toggle(): void
+  function close(): void
+```
+- Where:
+- `open` opens the launcher (`qs -p ~/.config/quickshell ipc call launcher open`)
+- `toggle` opens/closes the launcher (`qs -p ~/.config/quickshell ipc call launcher toggle`)
+- `close` closes the launcher (`qs -p ~/.config/quickshell ipc call launcher close`)
+
 ## Previews
 ---
 <img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/225a077c-d38f-4365-b082-7c09d428db9e" />
@@ -59,3 +73,6 @@ output_path = "~/.config/quickshell/colors.json"
 ---
 <img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/56917015-2a6a-4640-a5af-495b1fe8617b" />
 
+- When wallpaper changed:
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/78652dbb-18ad-40f9-8dc2-5ca4a15ad933" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/9fbbb5da-3e96-45d1-839c-a51905210403" />
