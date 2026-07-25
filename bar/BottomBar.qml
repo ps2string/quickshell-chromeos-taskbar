@@ -7,10 +7,9 @@ import QtQuick
 import QtQuick.Layouts
 import ".."
 import "../services"
+import "../components"
 
 // ChromeOS-style bottom shelf / taskbar
-// Layout: [Launcher] [Workspaces] | [Pins + Open Apps (centered)] | [Status Pill → Quick Settings]
-
 PanelWindow {
     id: barWindow
 
@@ -37,14 +36,12 @@ PanelWindow {
 
     function getAppId(toplevel) {
         if (!toplevel) return "";
-        // Hyprland toplevels expose class via lastIpcObject
         if (toplevel.lastIpcObject) {
             let cls = toplevel.lastIpcObject["class"];
             if (cls && typeof cls === "string" && cls.length > 0) return cls;
             let iCls = toplevel.lastIpcObject["initialClass"];
             if (iCls && typeof iCls === "string" && iCls.length > 0) return iCls;
         }
-        // Wayland ToplevelManager toplevels expose appId directly
         if (toplevel.appId && typeof toplevel.appId === "string" && toplevel.appId.length > 0)
             return toplevel.appId;
         if (toplevel.title && typeof toplevel.title === "string")
@@ -56,7 +53,6 @@ PanelWindow {
         let result = [];
         let seen = new Set();
 
-        // Use Hyprland.toplevels (always available on Hyprland)
         if (typeof Hyprland !== "undefined" && Hyprland && Hyprland.toplevels && Hyprland.toplevels.values) {
             let vals = Hyprland.toplevels.values;
             for (let i = 0; i < vals.length; i++) {
@@ -128,14 +124,12 @@ PanelWindow {
     }
     Timer { interval: 10000; running: true; repeat: true; onTriggered: clockProc.running = true }
 
-    // --- Wallpaper watcher via Hyprland IPC ---
-    // Fires matugen whenever Hyprland dispatches a wallpaper change event
+    // --- Wallpaper watcher ---
     Connections {
         target: Hyprland
         function onRawEvent(event) {
             if (event.name === "wallpaper") {
                 let data = event.parse(2);
-                // data[1] is the wallpaper path
                 let wp = data.length >= 2 ? data[1] : "";
                 if (wp.length > 0) {
                     wallpaperThemeProc.command = [
@@ -167,7 +161,7 @@ PanelWindow {
         Behavior on color { ColorAnimation { duration: 400 } }
     }
 
-    // Subtle top border line (ChromeOS shelf shadow)
+    // Top border line
     Rectangle {
         anchors.top: parent.top
         anchors.left: parent.left
@@ -179,20 +173,20 @@ PanelWindow {
     Item {
         id: barContent
         anchors.fill: parent
-        anchors.leftMargin: 6
-        anchors.rightMargin: 6
+        anchors.leftMargin: 8
+        anchors.rightMargin: 8
 
         // =========================================================
-        // LEFT: Launcher (Google/ChromeOS circles icon)
+        // LEFT: Launcher + Workspaces (Desks)
         // =========================================================
         Item {
             id: leftSection
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            width: launcherBtn.width + workspaceRow.width + 8
+            width: launcherBtn.width + workspaceRow.width + 12
             height: parent.height
 
-            // Launcher button — ChromeOS "circle" launcher
+            // Launcher button
             Rectangle {
                 id: launcherBtn
                 anchors.left: parent.left
@@ -204,18 +198,28 @@ PanelWindow {
 
                 Behavior on color { ColorAnimation { duration: 150 } }
 
-                // Google-style 4-dot grid (ChromeOS launcher icon)
-                Grid {
+                // ChromeOS Ring Launcher Icon
+                Item {
                     anchors.centerIn: parent
-                    columns: 2
-                    spacing: 4
-                    Repeater {
-                        model: [ColorService.danger, ColorService.success, ColorService.accent, ColorService.textSecondary]
-                        Rectangle {
-                            width: 7; height: 7; radius: 2
-                            color: modelData
-                            Behavior on color { ColorAnimation { duration: 400 } }
-                        }
+                    width: 20
+                    height: 20
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 18
+                        height: 18
+                        radius: 9
+                        color: "transparent"
+                        border.color: ColorService.textPrimary
+                        border.width: 2
+                    }
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 8
+                        height: 8
+                        radius: 4
+                        color: ColorService.textPrimary
                     }
                 }
 
@@ -228,16 +232,15 @@ PanelWindow {
                 }
             }
 
-            // Workspace pill indicators (ChromeOS overview button style)
+            // ChromeOS Desk Workspaces
             Row {
                 id: workspaceRow
                 anchors.left: launcherBtn.right
                 anchors.leftMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 4
+                spacing: 6
 
                 Repeater {
-                    // Show workspaces 1-9 that exist in Hyprland
                     model: {
                         let ids = [];
                         if (Hyprland.workspaces && Hyprland.workspaces.values) {
@@ -247,7 +250,6 @@ PanelWindow {
                                 if (w && w.id > 0 && w.id <= 9) ids.push(w.id);
                             }
                         }
-                        // Ensure at least workspaces 1-3 always show
                         for (let i = 1; i <= 3; i++) {
                             if (!ids.includes(i)) ids.push(i);
                         }
@@ -263,9 +265,10 @@ PanelWindow {
                             return fw ? fw.id === wsId : false;
                         }
 
-                        width: isActive ? 28 : 22
-                        height: 22
-                        radius: 11
+                        // ChromeOS Desk Pill layout
+                        implicitWidth: wsText.implicitWidth + 18
+                        height: 26
+                        radius: 13
                         anchors.verticalCenter: parent.verticalCenter
 
                         color: isActive
@@ -274,13 +277,14 @@ PanelWindow {
                         border.color: isActive ? ColorService.accent : Qt.rgba(1, 1, 1, 0.1)
                         border.width: isActive ? 1.5 : 1
 
-                        Behavior on width        { NumberAnimation { duration: 180 } }
-                        Behavior on color        { ColorAnimation  { duration: 180 } }
-                        Behavior on border.color { ColorAnimation  { duration: 180 } }
+                        Behavior on implicitWidth { NumberAnimation { duration: 180 } }
+                        Behavior on color         { ColorAnimation  { duration: 180 } }
+                        Behavior on border.color  { ColorAnimation  { duration: 180 } }
 
                         Text {
+                            id: wsText
                             anchors.centerIn: parent
-                            text: wsId
+                            text: "Desk " + wsId
                             color: isActive ? ColorService.accent : ColorService.textSecondary
                             font.family: Theme.fontMain
                             font.pixelSize: 11
@@ -301,14 +305,13 @@ PanelWindow {
         }
 
         // =========================================================
-        // CENTER: Pinned apps + open windows dock (perfectly centered)
+        // CENTER: Pinned Apps + Open Windows Dock
         // =========================================================
         Row {
             id: centerDock
             anchors.centerIn: parent
             spacing: 4
 
-            // --- Pinned apps ---
             Repeater {
                 model: PinsService.pins
                 delegate: ShelfItem {
@@ -322,15 +325,12 @@ PanelWindow {
                 }
             }
 
-            // --- Separator (pipe) between pinned apps and unpinned running processes ---
             Item {
                 id: dockPipeSeparator
-                // Show separator when there are unpinned running apps
-                // We check Hyprland.toplevels.values and count unpinned ones
                 property bool hasUnpinned: {
                     if (typeof Hyprland === "undefined" || !Hyprland.toplevels || !Hyprland.toplevels.values)
                         return false;
-                    let _dep = Hyprland.activeToplevel; // reactive dependency
+                    let _dep = Hyprland.activeToplevel;
                     let vals = Hyprland.toplevels.values;
                     for (let i = 0; i < vals.length; i++) {
                         if (vals[i] && !barWindow.isToplevelPinned(vals[i])) return true;
@@ -353,16 +353,12 @@ PanelWindow {
                 }
             }
 
-            // --- Unpinned open windows (running processes) ---
-            // Use Hyprland.toplevels directly as model for reactivity.
-            // Filter pinned apps via delegate's `visible` property.
             Repeater {
                 id: unpinnedApps
                 model: (typeof Hyprland !== "undefined" && Hyprland.toplevels) ? Hyprland.toplevels : null
                 delegate: ShelfItem {
                     id: unpinnedItem
                     required property var modelData
-                    // Only show windows that aren't already pinned
                     visible: modelData && !barWindow.isToplevelPinned(modelData)
                     width: visible ? 44 : 0
                     pinData: null
@@ -376,110 +372,122 @@ PanelWindow {
         }
 
         // =========================================================
-        // RIGHT: Status pill → Quick Settings
+        // RIGHT: System Tray + ChromeOS Quick Settings Pod
         // =========================================================
-        Rectangle {
-            id: statusPill
+        RowLayout {
+            id: rightSection
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            height: 36
-            width: statusRow.implicitWidth + 20
-            radius: Theme.radiusPill
-            color: statusMouse.containsMouse
-                ? Qt.rgba(ColorService.bgHover.r, ColorService.bgHover.g, ColorService.bgHover.b, 1.0)
-                : Qt.rgba(ColorService.bgSurface.r, ColorService.bgSurface.g, ColorService.bgSurface.b, 1.0)
+            spacing: 8
 
-            Behavior on color { ColorAnimation { duration: 150 } }
-
-            RowLayout {
-                id: statusRow
-                anchors.centerIn: parent
-                spacing: 10
-
-                // Network icon
-                Text {
-                    text: SystemService.wifiConnected ? "󰤨" : "󰤭"
-                    font.family: Theme.fontIcon
-                    font.pixelSize: 14
-                    color: ColorService.textPrimary
-                    Behavior on color { ColorAnimation { duration: 400 } }
-                }
-
-                // Volume icon
-                Text {
-                    text: SystemService.isMuted ? "󰖁" : (SystemService.volume > 60 ? "󰕾" : (SystemService.volume > 0 ? "󰖀" : "󰕿"))
-                    font.family: Theme.fontIcon
-                    font.pixelSize: 14
-                    color: ColorService.textPrimary
-                    Behavior on color { ColorAnimation { duration: 400 } }
-                }
-
-                // Battery
-                RowLayout {
-                    spacing: 3
-                    Text {
-                        text: {
-                            let lvl = SystemService.batteryLevel;
-                            if (SystemService.isCharging) return "󰂄";
-                            if (lvl > 90) return "󰁹";
-                            if (lvl > 70) return "󰂀";
-                            if (lvl > 50) return "󰁾";
-                            if (lvl > 30) return "󰁼";
-                            if (lvl > 15) return "󰁺";
-                            return "󰁻";
-                        }
-                        font.family: Theme.fontIcon
-                        font.pixelSize: 14
-                        color: SystemService.batteryLevel <= 15 ? ColorService.danger : ColorService.textPrimary
-                        Behavior on color { ColorAnimation { duration: 400 } }
-                    }
-                    Text {
-                        text: SystemService.batteryLevel + "%"
-                        color: ColorService.textPrimary
-                        font.family: Theme.fontMain
-                        font.pixelSize: 12
-                        font.bold: true
-                        Behavior on color { ColorAnimation { duration: 400 } }
-                    }
-                }
-
-                // Dot separator
-                Rectangle {
-                    width: 3; height: 3; radius: 2
-                    color: ColorService.textSecondary
-                }
-
-                // Clock
-                Column {
-                    spacing: 0
-                    Text {
-                        text: barWindow.currentTime
-                        color: ColorService.textPrimary
-                        font.family: Theme.fontMain
-                        font.pixelSize: 14
-                        font.bold: true
-                        horizontalAlignment: Text.AlignHCenter
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        Behavior on color { ColorAnimation { duration: 400 } }
-                    }
-                    Text {
-                        text: barWindow.currentDate
-                        color: ColorService.textSecondary
-                        font.family: Theme.fontMain
-                        font.pixelSize: 10
-                        horizontalAlignment: Text.AlignHCenter
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        Behavior on color { ColorAnimation { duration: 400 } }
-                    }
-                }
+            // 1. System Tray Icons
+            SystemTray {
+                Layout.alignment: Qt.AlignVCenter
             }
 
-            MouseArea {
-                id: statusMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: barWindow.toggleQuickSettings()
+            // 2. Official ChromeOS Quick Settings Pill
+            Rectangle {
+                id: statusPill
+                Layout.alignment: Qt.AlignVCenter
+                height: 36
+                implicitWidth: statusRow.implicitWidth + 24
+                radius: 18
+                color: statusMouse.containsMouse
+                    ? Qt.rgba(ColorService.bgHover.r, ColorService.bgHover.g, ColorService.bgHover.b, 1.0)
+                    : Qt.rgba(ColorService.bgSurface.r, ColorService.bgSurface.g, ColorService.bgSurface.b, 0.9)
+                border.color: Qt.rgba(1, 1, 1, 0.08)
+                border.width: 1
+
+                Behavior on color { ColorAnimation { duration: 150 } }
+
+                RowLayout {
+                    id: statusRow
+                    anchors.centerIn: parent
+                    spacing: 10
+
+                    // Network
+                    Text {
+                        text: SystemService.wifiConnected ? "󰤨" : "󰤭"
+                        font.family: Theme.fontIcon
+                        font.pixelSize: 14
+                        color: ColorService.textPrimary
+                        Layout.alignment: Qt.AlignVCenter
+                    }
+
+                    // Volume
+                    Text {
+                        text: SystemService.isMuted ? "󰖁" : (SystemService.volume > 60 ? "󰕾" : (SystemService.volume > 0 ? "󰖀" : "󰕿"))
+                        font.family: Theme.fontIcon
+                        font.pixelSize: 14
+                        color: ColorService.textPrimary
+                        Layout.alignment: Qt.AlignVCenter
+                    }
+
+                    // Battery
+                    RowLayout {
+                        spacing: 3
+                        Layout.alignment: Qt.AlignVCenter
+                        Text {
+                            text: {
+                                let lvl = SystemService.batteryLevel;
+                                if (SystemService.isCharging) return "󰂄";
+                                if (lvl > 90) return "󰁹";
+                                if (lvl > 70) return "󰂀";
+                                if (lvl > 50) return "󰁾";
+                                if (lvl > 30) return "󰁼";
+                                if (lvl > 15) return "󰁺";
+                                return "󰁻";
+                            }
+                            font.family: Theme.fontIcon
+                            font.pixelSize: 14
+                            color: SystemService.batteryLevel <= 15 ? ColorService.danger : ColorService.textPrimary
+                        }
+                        Text {
+                            text: SystemService.batteryLevel + "%"
+                            color: ColorService.textPrimary
+                            font.family: Theme.fontMain
+                            font.pixelSize: 12
+                            font.bold: true
+                        }
+                    }
+
+                    // ChromeOS Vertical Divider Separator
+                    Rectangle {
+                        width: 1
+                        height: 16
+                        color: Qt.rgba(1, 1, 1, 0.2)
+                        Layout.alignment: Qt.AlignVCenter
+                    }
+
+                    // Time & Date inside Quick Settings pod
+                    RowLayout {
+                        spacing: 6
+                        Layout.alignment: Qt.AlignVCenter
+
+                        Text {
+                            text: barWindow.currentTime
+                            color: ColorService.textPrimary
+                            font.family: Theme.fontMain
+                            font.pixelSize: 13
+                            font.bold: true
+                        }
+
+                        Text {
+                            text: barWindow.currentDate
+                            color: ColorService.textSecondary
+                            font.family: Theme.fontMain
+                            font.pixelSize: 11
+                        }
+                    }
+                }
+
+                MouseArea {
+                    id: statusMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: barWindow.toggleQuickSettings()
+                }
             }
         }
     }
