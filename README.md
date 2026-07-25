@@ -14,6 +14,7 @@ A simple quickshell configuration that looks like chromeOS panel.
 5. Bluetooth daemon (optional)
 6. Matugen (optional)
 7. Papirus icon theme
+8. SwayNC (for notifications)
 
 ## What you need to do to get this shell working?
 1. First, go to the prefered directory to clone this repository (i.e Downloads.
