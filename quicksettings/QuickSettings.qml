@@ -51,7 +51,7 @@ PopupWindow {
 
     Rectangle {
         anchors.fill: parent
-        color: Qt.rgba(ColorService.bgBase.r, ColorService.bgBase.g, ColorService.bgBase.b, 0.96)
+        color: Qt.alpha(ColorService.bgBase, 0.96)
         radius: Theme.radiusLarge
         border.color: Qt.rgba(1, 1, 1, 0.1)
         border.width: 1
@@ -346,7 +346,7 @@ PopupWindow {
                             implicitHeight: isSelected ? 86 : 44
                             radius: 8
                             color: net.inUse
-                                ? Qt.rgba(ColorService.accentDim.r, ColorService.accentDim.g, ColorService.accentDim.b, 0.4)
+                                ? Qt.alpha(ColorService.accentDim, 0.4)
                                 : (netArea.containsMouse ? ColorService.bgHover : ColorService.bgSurface)
                             border.color: net.inUse ? ColorService.accent : "transparent"
                             border.width: net.inUse ? 1 : 0
@@ -441,7 +441,7 @@ PopupWindow {
                                     Rectangle {
                                         width: 68; height: 30; radius: 6
                                         color: SystemService.isConnectingWifi
-                                            ? Qt.rgba(ColorService.accent.r, ColorService.accent.g, ColorService.accent.b, 0.4)
+                                            ? Qt.alpha(ColorService.accent, 0.4)
                                             : ColorService.accent
                                         Behavior on color { ColorAnimation { duration: 150 } }
                                         Text {
@@ -569,7 +569,7 @@ PopupWindow {
                             height: 44
                             radius: 8
                             color: dev.connected
-                                ? Qt.rgba(ColorService.accentDim.r, ColorService.accentDim.g, ColorService.accentDim.b, 0.4)
+                                ? Qt.alpha(ColorService.accentDim, 0.4)
                                 : (devArea.containsMouse ? ColorService.bgHover : ColorService.bgSurface)
                             border.color: dev.connected ? ColorService.accent : "transparent"
                             border.width: dev.connected ? 1 : 0
@@ -608,7 +608,7 @@ PopupWindow {
 
                                 Rectangle {
                                     width: 70; height: 26; radius: 6
-                                    color: dev.connected ? Qt.rgba(ColorService.danger.r, ColorService.danger.g, ColorService.danger.b, 0.2) : ColorService.bgElevated
+                                    color: dev.connected ? Qt.alpha(ColorService.danger, 0.2) : ColorService.bgElevated
                                     border.color: dev.connected ? ColorService.danger : Qt.rgba(1,1,1,0.1)
                                     border.width: 1
 
@@ -722,7 +722,7 @@ PopupWindow {
                             height: 44
                             radius: 8
                             color: modelData.inUse
-                                ? Qt.rgba(ColorService.accentDim.r, ColorService.accentDim.g, ColorService.accentDim.b, 0.4)
+                                ? Qt.alpha(ColorService.accentDim, 0.4)
                                 : (outArea.containsMouse ? ColorService.bgHover : ColorService.bgSurface)
                             border.color: modelData.inUse ? ColorService.accent : "transparent"
                             border.width: modelData.inUse ? 1 : 0
@@ -804,7 +804,7 @@ PopupWindow {
                             height: 44
                             radius: 8
                             color: modelData.inUse
-                                ? Qt.rgba(ColorService.accentDim.r, ColorService.accentDim.g, ColorService.accentDim.b, 0.4)
+                                ? Qt.alpha(ColorService.accentDim, 0.4)
                                 : (inArea.containsMouse ? ColorService.bgHover : ColorService.bgSurface)
                             border.color: modelData.inUse ? ColorService.accent : "transparent"
                             border.width: modelData.inUse ? 1 : 0
@@ -882,7 +882,7 @@ PopupWindow {
         width: 32; height: 32; radius: 16
         color: ibArea.containsMouse
             ? (danger ? ColorService.danger : ColorService.bgHover)
-            : (danger ? Qt.rgba(ColorService.danger.r, ColorService.danger.g, ColorService.danger.b, 0.25) : ColorService.bgSurface)
+            : (danger ? Qt.alpha(ColorService.danger, 0.25) : ColorService.bgSurface)
         Behavior on color { ColorAnimation { duration: 150 } }
 
         Text {
@@ -917,9 +917,7 @@ PopupWindow {
         Layout.fillWidth: true
         height: 58
         radius: Theme.radiusMedium
-        color: active
-            ? Qt.rgba(ColorService.accentDim.r, ColorService.accentDim.g, ColorService.accentDim.b, 1.0)
-            : ColorService.bgSurface
+        color: active ? ColorService.accentDim : ColorService.bgSurface
         border.color: active ? ColorService.accent : "transparent"
         border.width: active ? 1.5 : 0
         Behavior on color        { ColorAnimation { duration: 200 } }
@@ -997,9 +995,7 @@ PopupWindow {
         Layout.fillWidth: true
         height: 58
         radius: Theme.radiusMedium
-        color: active
-            ? Qt.rgba(ColorService.accentDim.r, ColorService.accentDim.g, ColorService.accentDim.b, 1.0)
-            : ColorService.bgSurface
+        color: active ? ColorService.accentDim : ColorService.bgSurface
         border.color: active ? ColorService.accent : "transparent"
         border.width: active ? 1.5 : 0
         Behavior on color        { ColorAnimation { duration: 200 } }
@@ -1143,4 +1139,3 @@ PopupWindow {
         }
     }
 }
-
