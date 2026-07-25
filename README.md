@@ -21,5 +21,10 @@ A simple quickshell configuration that looks like chromeOS panel (not fully func
 4. Move the contents inside the cloned directory inside the new folder
 5. Run quickshell (either with `qs` or just `quickshell`)
 
-## Preview
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/26396015-5cd7-422d-9a9a-67716dbaea6c" />
+## Previews
+---
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/225a077c-d38f-4365-b082-7c09d428db9e" />
+
+---
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/56917015-2a6a-4640-a5af-495b1fe8617b" />
+
