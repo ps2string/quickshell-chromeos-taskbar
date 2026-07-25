@@ -6,7 +6,6 @@ import QtQuick.Controls
 import ".."
 import "../services"
 
-// ChromeOS-style Quick Settings panel with Wi-Fi and Bluetooth detail sub-pages
 PopupWindow {
     id: qsRoot
 
@@ -16,11 +15,10 @@ PopupWindow {
     color: "transparent"
     grabFocus: true
 
-    property string currentView: "main" // "main", "wifi", "bluetooth"
+    property string currentView: "main" 
     property string selectedWifiSsid: ""
     property string wifiPasswordInput: ""
 
-    // Connection result toast
     property string _toastMsg: ""
     property bool   _toastOk:  true
     property bool   _toastVisible: false
@@ -68,12 +66,10 @@ PopupWindow {
             spacing: 12
             visible: qsRoot.currentView === "main"
 
-            // Header
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
 
-                // User avatar
                 Rectangle {
                     width: 36; height: 36; radius: 18
                     gradient: Gradient {
@@ -116,7 +112,6 @@ PopupWindow {
 
                 Item { Layout.fillWidth: true }
 
-                // Power action buttons
                 Row {
                     spacing: 6
                     QsIconBtn { icon: "󰌾"; tooltip: "Lock screen"; onAct: SystemService.lockScreen() }
@@ -127,14 +122,12 @@ PopupWindow {
 
             Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.08) }
 
-            // Toggle tiles (2-col grid with detail expanders like ChromeOS)
             GridLayout {
                 Layout.fillWidth: true
                 columns: 2
                 rowSpacing: 8
                 columnSpacing: 8
 
-                // Wi-Fi tile
                 QsExpandableTile {
                     icon: SystemService.wifiEnabled ? (SystemService.wifiConnected ? "󰤨" : "󰤭") : "󰤮"
                     label: "Wi-Fi"
@@ -147,7 +140,6 @@ PopupWindow {
                     }
                 }
 
-                // Bluetooth tile
                 QsExpandableTile {
                     icon: SystemService.bluetoothOn ? "󰂯" : "󰂲"
                     label: "Bluetooth"
@@ -160,7 +152,6 @@ PopupWindow {
                     }
                 }
 
-                // Do Not Disturb tile
                 QsSimpleTile {
                     icon: SystemService.dndActive ? "󰂛" : "󰖔"
                     label: "Do Not Disturb"
@@ -169,7 +160,6 @@ PopupWindow {
                     onTap: SystemService.toggleDnd()
                 }
 
-                // Night Light tile
                 QsSimpleTile {
                     icon: SystemService.nightLightOn ? "󰛮" : "󰛩"
                     label: "Night Light"
@@ -181,7 +171,6 @@ PopupWindow {
 
             Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.08) }
 
-            // Sliders
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 12
@@ -191,8 +180,10 @@ PopupWindow {
                     iconOff: "󰖁"
                     muted:   SystemService.isMuted
                     value:   SystemService.volume
+                    hasDetail: true
                     onSliderMoved: (v) => SystemService.setVolume(v)
                     onIconClicked: SystemService.toggleMute()
+                    onDetailClicked: qsRoot.currentView = "audio"
                 }
 
                 QsSlider {
@@ -200,6 +191,7 @@ PopupWindow {
                     iconOff: "󰃞"
                     muted:   false
                     value:   SystemService.brightness
+                    hasDetail: false
                     onSliderMoved: (v) => SystemService.setBrightness(v)
                     onIconClicked: {}
                 }
@@ -207,7 +199,6 @@ PopupWindow {
 
             Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.08) }
 
-            // Battery row
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 12
@@ -258,7 +249,6 @@ PopupWindow {
             spacing: 10
             visible: qsRoot.currentView === "wifi"
 
-            // Header bar
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
@@ -284,7 +274,6 @@ PopupWindow {
                     onAct: SystemService.scanWifi()
                 }
 
-                // Wi-Fi On/Off switch (controls radio, not connection)
                 Rectangle {
                     width: 44; height: 24; radius: 12
                     color: SystemService.wifiEnabled ? ColorService.accent : ColorService.bgElevated
@@ -306,7 +295,6 @@ PopupWindow {
 
             Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.08) }
 
-            // Status bar: scanning / connecting / empty
             RowLayout {
                 Layout.fillWidth: true
                 visible: SystemService.isScanningWifi || SystemService.isConnectingWifi || qsRoot._toastVisible
@@ -326,7 +314,7 @@ PopupWindow {
                         if (qsRoot._toastVisible)
                             return qsRoot._toastMsg;
                         if (SystemService.isConnectingWifi)
-                            return "Connecting to " + SystemService.wifiNetworks.length > 0 ? "network…" : "network…";
+                            return "Connecting to network…";
                         return "Scanning for networks…";
                     }
                     color: qsRoot._toastVisible
@@ -339,14 +327,14 @@ PopupWindow {
                 }
             }
 
-            // Networks List
             ScrollView {
+                id: wifiScroll
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
 
                 ColumnLayout {
-                    width: parent.width
+                    width: wifiScroll.width
                     spacing: 4
 
                     Repeater {
@@ -386,6 +374,7 @@ PopupWindow {
                                         Layout.fillWidth: true
                                         spacing: 2
                                         Text {
+                                            width: parent.width
                                             text: net.ssid
                                             color: ColorService.textPrimary
                                             font.family: Theme.fontMain
@@ -485,10 +474,8 @@ PopupWindow {
                                 onClicked: {
                                     if (net.inUse) return;
                                     if (net.security.length === 0) {
-                                        // Open network — connect immediately
                                         SystemService.connectWifi(net.ssid, "");
                                     } else {
-                                        // Secured network — toggle password field
                                         qsRoot.selectedWifiSsid = (qsRoot.selectedWifiSsid === net.ssid) ? "" : net.ssid;
                                     }
                                 }
@@ -508,7 +495,6 @@ PopupWindow {
             spacing: 10
             visible: qsRoot.currentView === "bluetooth"
 
-            // Header bar
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
@@ -534,7 +520,6 @@ PopupWindow {
                     onAct: SystemService.scanBluetooth()
                 }
 
-                // Bluetooth On/Off switch
                 Rectangle {
                     width: 44; height: 24; radius: 12
                     color: SystemService.bluetoothOn ? ColorService.accent : ColorService.bgElevated
@@ -556,7 +541,6 @@ PopupWindow {
 
             Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.08) }
 
-            // Scanning indicator
             Text {
                 visible: SystemService.isScanningBt
                 text: "Scanning bluetooth devices..."
@@ -566,14 +550,14 @@ PopupWindow {
                 Layout.alignment: Qt.AlignHCenter
             }
 
-            // Devices List
             ScrollView {
+                id: btScroll
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
 
                 ColumnLayout {
-                    width: parent.width
+                    width: btScroll.width
                     spacing: 4
 
                     Repeater {
@@ -606,6 +590,7 @@ PopupWindow {
                                     Layout.fillWidth: true
                                     spacing: 2
                                     Text {
+                                        width: parent.width
                                         text: dev.name
                                         color: ColorService.textPrimary
                                         font.family: Theme.fontMain
@@ -677,11 +662,216 @@ PopupWindow {
                 }
             }
         }
+
+        // =========================================================
+        // VIEW 4: AUDIO DEVICES SUB-PAGE (PipeWire Native Integration)
+        // =========================================================
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 16
+            spacing: 10
+            visible: qsRoot.currentView === "audio"
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                QsIconBtn {
+                    icon: "󰅁"
+                    tooltip: "Back"
+                    onAct: qsRoot.currentView = "main"
+                }
+
+                Text {
+                    text: "Audio Devices"
+                    color: ColorService.textPrimary
+                    font.family: Theme.fontMain
+                    font.pixelSize: 16
+                    font.bold: true
+                    Layout.fillWidth: true
+                }
+            }
+
+            Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.08) }
+
+            ScrollView {
+                id: audioScroll
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+
+                ColumnLayout {
+                    width: audioScroll.width
+                    spacing: 8
+
+                    // OUTPUT SECTION
+                    Text {
+                        text: "Output"
+                        color: ColorService.accent
+                        font.family: Theme.fontMain
+                        font.pixelSize: 12
+                        font.bold: true
+                    }
+
+                    Repeater {
+                        model: SystemService.audioOutputs
+                        delegate: Rectangle {
+                            id: audioOutItem
+                            Layout.fillWidth: true
+                            implicitWidth: 200
+                            height: 44
+                            radius: 8
+                            color: modelData.inUse
+                                ? Qt.rgba(ColorService.accentDim.r, ColorService.accentDim.g, ColorService.accentDim.b, 0.4)
+                                : (outArea.containsMouse ? ColorService.bgHover : ColorService.bgSurface)
+                            border.color: modelData.inUse ? ColorService.accent : "transparent"
+                            border.width: modelData.inUse ? 1 : 0
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 10
+
+                                Text {
+                                    text: "󰓃" 
+                                    font.family: Theme.fontIcon
+                                    font.pixelSize: 18
+                                    color: modelData.inUse ? ColorService.accent : ColorService.textPrimary
+                                }
+
+                                Column {
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
+                                    spacing: 2
+
+                                    Text {
+                                        width: parent.width
+                                        text: modelData.deviceLabel || SystemService.getNodeLabel(modelData.rawNode)
+                                        color: ColorService.textPrimary
+                                        font.family: Theme.fontMain
+                                        font.pixelSize: 13
+                                        font.bold: modelData.inUse
+                                        elide: Text.ElideRight
+                                    }
+                                }
+
+                                Text {
+                                    visible: modelData.inUse
+                                    text: "󰄬" 
+                                    font.family: Theme.fontIcon
+                                    font.pixelSize: 16
+                                    color: ColorService.accent
+                                }
+                            }
+
+                            MouseArea {
+                                id: outArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: SystemService.setAudioOutput(modelData)
+                            }
+                        }
+                    }
+
+                    Text {
+                        visible: SystemService.audioOutputs.length === 0
+                        text: "No output devices found."
+                        color: ColorService.textSecondary
+                        font.family: Theme.fontMain
+                        font.pixelSize: 12
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 4
+                        Layout.bottomMargin: 4
+                    }
+
+                    // INPUT SECTION
+                    Text {
+                        text: "Input"
+                        color: ColorService.accent
+                        font.family: Theme.fontMain
+                        font.pixelSize: 12
+                        font.bold: true
+                        Layout.topMargin: 8
+                    }
+
+                    Repeater {
+                        model: SystemService.audioInputs
+                        delegate: Rectangle {
+                            id: audioInItem
+                            Layout.fillWidth: true
+                            implicitWidth: 200
+                            height: 44
+                            radius: 8
+                            color: modelData.inUse
+                                ? Qt.rgba(ColorService.accentDim.r, ColorService.accentDim.g, ColorService.accentDim.b, 0.4)
+                                : (inArea.containsMouse ? ColorService.bgHover : ColorService.bgSurface)
+                            border.color: modelData.inUse ? ColorService.accent : "transparent"
+                            border.width: modelData.inUse ? 1 : 0
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 10
+
+                                Text {
+                                    text: "󰍬" 
+                                    font.family: Theme.fontIcon
+                                    font.pixelSize: 18
+                                    color: modelData.inUse ? ColorService.accent : ColorService.textPrimary
+                                }
+
+                                Column {
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
+                                    spacing: 2
+
+                                    Text {
+                                        width: parent.width
+                                        text: modelData.deviceLabel || SystemService.getNodeLabel(modelData.rawNode)
+                                        color: ColorService.textPrimary
+                                        font.family: Theme.fontMain
+                                        font.pixelSize: 13
+                                        font.bold: modelData.inUse
+                                        elide: Text.ElideRight
+                                    }
+                                }
+
+                                Text {
+                                    visible: modelData.inUse
+                                    text: "󰄬"
+                                    font.family: Theme.fontIcon
+                                    font.pixelSize: 16
+                                    color: ColorService.accent
+                                }
+                            }
+
+                            MouseArea {
+                                id: inArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: SystemService.setAudioInput(modelData)
+                            }
+                        }
+                    }
+
+                    Text {
+                        visible: SystemService.audioInputs.length === 0
+                        text: "No input devices found."
+                        color: ColorService.textSecondary
+                        font.family: Theme.fontMain
+                        font.pixelSize: 12
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 4
+                    }
+                }
+            }
+        }
     }
 
     // ---- Helper components ----
 
-    // Icon button
     component QsIconBtn: Rectangle {
         id: iconBtn
         property string icon: ""
@@ -715,7 +905,6 @@ PopupWindow {
         }
     }
 
-    // ChromeOS Expandable Tile (Wi-Fi / Bluetooth with toggle icon AND sub-page arrow)
     component QsExpandableTile: Rectangle {
         id: tile
         property string icon: ""
@@ -741,7 +930,6 @@ PopupWindow {
             anchors.margins: 8
             spacing: 6
 
-            // Left icon button (toggles power on/off)
             Rectangle {
                 width: 36; height: 36; radius: 18
                 color: toggleArea.containsMouse ? ColorService.bgHover : "transparent"
@@ -761,7 +949,6 @@ PopupWindow {
                 }
             }
 
-            // Label & Sublabel (opens detail view)
             Column {
                 Layout.fillWidth: true
                 spacing: 2
@@ -781,7 +968,6 @@ PopupWindow {
                 }
             }
 
-            // Arrow button ❯ (opens detail view)
             Text {
                 text: "❯"
                 font.family: Theme.fontMain
@@ -800,7 +986,6 @@ PopupWindow {
         }
     }
 
-    // Simple Toggle Tile (DND / Night Light)
     component QsSimpleTile: Rectangle {
         id: tile
         property string icon: ""
@@ -857,15 +1042,16 @@ PopupWindow {
         }
     }
 
-    // Slider Row Component with direct MouseArea drag tracking
     component QsSlider: RowLayout {
         id: slRow
         property string iconOn: ""
         property string iconOff: ""
         property bool muted: false
         property real value: 50
+        property bool hasDetail: false 
         signal sliderMoved(real v)
         signal iconClicked()
+        signal detailClicked() 
 
         Layout.fillWidth: true
         spacing: 10
@@ -883,7 +1069,6 @@ PopupWindow {
             }
         }
 
-        // Custom Slider Track & Handle
         Item {
             id: track
             Layout.fillWidth: true
@@ -941,5 +1126,21 @@ PopupWindow {
             horizontalAlignment: Text.AlignRight
             Behavior on color { ColorAnimation { duration: 400 } }
         }
+
+        Text {
+            visible: slRow.hasDetail
+            text: "❯"
+            font.family: Theme.fontMain
+            font.pixelSize: 12
+            font.bold: true
+            color: ColorService.textSecondary
+            MouseArea {
+                anchors.fill: parent
+                anchors.margins: -8
+                cursorShape: Qt.PointingHandCursor
+                onClicked: slRow.detailClicked()
+            }
+        }
     }
 }
+
