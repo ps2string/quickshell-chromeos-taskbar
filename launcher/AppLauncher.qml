@@ -8,7 +8,7 @@ import ".."
 import "../services"
 
 // ChromeOS-style app launcher / app drawer
-// Opens bottom-left, shows pinned apps row + all-apps grid with search
+// Opens bottom-left, shows pinned apps row + all-apps grid (or list view on search)
 
 PopupWindow {
     id: launcherRoot
@@ -19,10 +19,93 @@ PopupWindow {
     color: "transparent"
     grabFocus: true
 
-    // Close on click-outside
-    onVisibleChanged: if (visible) searchInput.forceActiveFocus()
+    property bool isOpen: false
+
+    // Launch helper function
+    function launchApp(appData) {
+        if (!appData) return;
+        if (appData.execute) {
+            appData.execute();
+        } else if (appData.exec) {
+            let p = Qt.createQmlObject('import Quickshell.Io; Process {}', launcherRoot);
+            p.command = ["sh", "-c", appData.exec];
+            p.running = true;
+        }
+    }
+
+    // Safely retrieve and filter application list
+    function getFilteredApps() {
+        let all = [];
+        if (typeof DesktopEntries !== "undefined" && DesktopEntries.applications && DesktopEntries.applications.values) {
+            let vals = DesktopEntries.applications.values;
+            for (let i = 0; i < vals.length; i++) {
+                if (vals[i]) all.push(vals[i]);
+            }
+        }
+        let q = searchInput.text.toLowerCase().trim();
+        if (!q) return all;
+
+        return all.filter(app => {
+            if (!app) return false;
+            let n = (app.name || "").toLowerCase();
+            let g = (app.genericName || "").toLowerCase();
+            let e = (app.execString || app.exec || "").toLowerCase();
+            let id = (app.id || "").toLowerCase();
+            return n.includes(q) || g.includes(q) || e.includes(q) || id.includes(q);
+        });
+    }
+
+    // Launch top search result
+    function launchFirstResult() {
+        let results = getFilteredApps();
+        if (results.length > 0) {
+            launchApp(results[0]);
+            close();
+        }
+    }
+
+    // Control functions
+    function open() {
+        searchInput.text = "";
+        visible = true;
+        isOpen = true;
+        searchInput.forceActiveFocus();
+    }
+
+    function close() {
+        isOpen = false;
+        closeTimer.start();
+    }
+
+    function toggle() {
+        if (isOpen) close();
+        else open();
+    }
+
+    // Timer to allow slide-down animation to finish before hiding window
+    Timer {
+        id: closeTimer
+        interval: 250
+        repeat: false
+        onTriggered: {
+            visible = false;
+            searchInput.text = "";
+        }
+    }
+
+    // Catch external visibility toggles
+    onVisibleChanged: {
+        if (visible) {
+            searchInput.text = "";
+            isOpen = true;
+            searchInput.forceActiveFocus();
+        } else {
+            isOpen = false;
+        }
+    }
 
     Rectangle {
+        id: launcherContainer
         anchors.fill: parent
         color: Qt.rgba(ColorService.bgBase.r, ColorService.bgBase.g, ColorService.bgBase.b, 0.96)
         radius: Theme.radiusLarge
@@ -30,7 +113,26 @@ PopupWindow {
         border.width: 1
 
         layer.enabled: true
-        layer.effect: null  // shadow handled by window compositor
+        layer.effect: null
+
+        // ChromeOS Slide & Fade Animations
+        opacity: launcherRoot.isOpen ? 1.0 : 0.0
+        transform: Translate {
+            y: launcherRoot.isOpen ? 0 : 40
+            Behavior on y {
+                NumberAnimation {
+                    duration: 250
+                    easing.type: Easing.OutCubic
+                }
+            }
+        }
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 220
+                easing.type: Easing.OutCubic
+            }
+        }
 
         Behavior on color { ColorAnimation { duration: 400 } }
 
@@ -74,8 +176,9 @@ PopupWindow {
                         font.family: Theme.fontMain
                         font.pixelSize: 15
                         background: null
-                        Keys.onEscapePressed: launcherRoot.visible = false
-                        onTextChanged: appGrid.currentFilter = searchInput.text
+                        Keys.onEscapePressed: launcherRoot.close()
+                        Keys.onReturnPressed: launcherRoot.launchFirstResult()
+                        Keys.onEnterPressed: launcherRoot.launchFirstResult()
                     }
 
                     // Clear button
@@ -140,12 +243,12 @@ PopupWindow {
                                         id: pinnedIcon
                                         anchors.fill: parent
                                         source: modelData.icon ? Quickshell.iconPath(modelData.icon, true) : ""
-                                        visible: backer.status === Image.Ready
+                                        visible: status === Image.Ready
                                     }
                                     Rectangle {
                                         anchors.fill: parent; radius: 10
                                         color: ColorService.accentDim
-                                        visible: pinnedIcon.backer.status !== Image.Ready
+                                        visible: pinnedIcon.status !== Image.Ready
                                         Text {
                                             anchors.centerIn: parent
                                             text: modelData.name ? modelData.name[0].toUpperCase() : "?"
@@ -176,7 +279,7 @@ PopupWindow {
                                         let p = Qt.createQmlObject('import Quickshell.Io; Process {}', launcherRoot);
                                         p.command = ["sh", "-c", modelData.exec]; p.running = true;
                                     }
-                                    launcherRoot.visible = false;
+                                    launcherRoot.close();
                                 }
                             }
                         }
@@ -192,7 +295,7 @@ PopupWindow {
                 color: Qt.rgba(1, 1, 1, 0.07)
             }
 
-            // ---- All apps section label ----
+            // ---- Section label ----
             Text {
                 text: searchInput.text.length === 0 ? "All apps" : ("Results for \"" + searchInput.text + "\"")
                 color: ColorService.textSecondary
@@ -204,35 +307,21 @@ PopupWindow {
                 Behavior on color { ColorAnimation { duration: 400 } }
             }
 
-            // ---- App grid ----
-            ScrollView {
+            // ---- Content Container (Grid for default, List for Search) ----
+            Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                ScrollBar.vertical.policy: ScrollBar.AsNeeded
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
+                // --- Grid View (Default "All Apps") ---
                 GridView {
                     id: appGrid
                     anchors.fill: parent
+                    visible: searchInput.text.length === 0
                     cellWidth: 100
                     cellHeight: 110
-                    property string currentFilter: ""
 
-                    model: {
-                        let all = (typeof DesktopEntries !== "undefined" && DesktopEntries.applications && DesktopEntries.applications.values)
-                            ? DesktopEntries.applications.values : [];
-                        if (!currentFilter || currentFilter.trim() === "") return all;
-                        let q = currentFilter.toLowerCase().trim();
-                        return all.filter(app => {
-                            if (!app) return false;
-                            let n = (app.name || "").toLowerCase();
-                            let g = (app.genericName || "").toLowerCase();
-                            let e = (app.execString || app.exec || "").toLowerCase();
-                            let id = (app.id || "").toLowerCase();
-                            return n.includes(q) || g.includes(q) || e.includes(q) || id.includes(q);
-                        });
-                    }
+                    model: searchInput.text.length === 0 ? launcherRoot.getFilteredApps() : []
 
                     delegate: Item {
                         width: appGrid.cellWidth
@@ -260,13 +349,13 @@ PopupWindow {
                                         id: gridIcon
                                         anchors.fill: parent
                                         source: modelData.icon ? Quickshell.iconPath(modelData.icon, true) : ""
-                                        visible: backer.status === Image.Ready
+                                        visible: status === Image.Ready
                                         smooth: true
                                     }
                                     Rectangle {
                                         anchors.fill: parent; radius: 14
                                         color: ColorService.accentDim
-                                        visible: gridIcon.backer.status !== Image.Ready
+                                        visible: gridIcon.status !== Image.Ready
                                         Behavior on color { ColorAnimation { duration: 400 } }
                                         Text {
                                             anchors.centerIn: parent
@@ -304,12 +393,111 @@ PopupWindow {
                                         appCtxMenu.popup();
                                         return;
                                     }
-                                    if (modelData.execute) modelData.execute();
-                                    else if (modelData.exec) {
-                                        let p = Qt.createQmlObject('import Quickshell.Io; Process {}', launcherRoot);
-                                        p.command = ["sh", "-c", modelData.exec]; p.running = true;
+                                    launcherRoot.launchApp(modelData);
+                                    launcherRoot.close();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // --- List View (Used when searching) ---
+                ListView {
+                    id: appList
+                    anchors.fill: parent
+                    visible: searchInput.text.length > 0
+                    spacing: 4
+
+                    model: searchInput.text.length > 0 ? launcherRoot.getFilteredApps() : []
+
+                    delegate: Item {
+                        width: appList.width
+                        height: 52
+
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: 2
+                            radius: Theme.radiusMedium
+                            color: listItemArea.containsMouse ? ColorService.bgHover : "transparent"
+                            Behavior on color { ColorAnimation { duration: 120 } }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 12
+                                spacing: 14
+
+                                // Icon
+                                Rectangle {
+                                    width: 36; height: 36
+                                    radius: 10
+                                    color: "transparent"
+                                    Layout.alignment: Qt.AlignVCenter
+
+                                    IconImage {
+                                        id: listIcon
+                                        anchors.fill: parent
+                                        source: modelData.icon ? Quickshell.iconPath(modelData.icon, true) : ""
+                                        visible: status === Image.Ready
+                                        smooth: true
                                     }
-                                    launcherRoot.visible = false;
+                                    Rectangle {
+                                        anchors.fill: parent; radius: 10
+                                        color: ColorService.accentDim
+                                        visible: listIcon.status !== Image.Ready
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: modelData.name ? modelData.name[0].toUpperCase() : "A"
+                                            color: ColorService.accent
+                                            font.family: Theme.fontMain
+                                            font.pixelSize: 16
+                                            font.bold: true
+                                        }
+                                    }
+                                }
+
+                                // App Name & Description
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
+                                    spacing: 2
+
+                                    Text {
+                                        text: modelData.name || "App"
+                                        color: ColorService.textPrimary
+                                        font.family: Theme.fontMain
+                                        font.pixelSize: 14
+                                        font.bold: true
+                                        elide: Text.ElideRight
+                                        Layout.fillWidth: true
+                                    }
+
+                                    Text {
+                                        text: modelData.genericName || modelData.comment || modelData.execString || ""
+                                        color: ColorService.textSecondary
+                                        font.family: Theme.fontMain
+                                        font.pixelSize: 11
+                                        elide: Text.ElideRight
+                                        visible: text.length > 0
+                                        Layout.fillWidth: true
+                                    }
+                                }
+                            }
+
+                            MouseArea {
+                                id: listItemArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                onClicked: (mouse) => {
+                                    if (mouse.button === Qt.RightButton) {
+                                        appCtxMenu.appData = modelData;
+                                        appCtxMenu.popup();
+                                        return;
+                                    }
+                                    launcherRoot.launchApp(modelData);
+                                    launcherRoot.close();
                                 }
                             }
                         }
@@ -319,7 +507,7 @@ PopupWindow {
         }
     }
 
-    // Context menu for app grid items
+    // Context menu for app items
     Menu {
         id: appCtxMenu
         property var appData: null
@@ -341,13 +529,8 @@ PopupWindow {
             }
             background: Rectangle { color: parent.hovered ? ColorService.bgHover : "transparent"; radius: 8 }
             onTriggered: {
-                let d = appCtxMenu.appData;
-                if (d && d.execute) d.execute();
-                else if (d && d.exec) {
-                    let p = Qt.createQmlObject('import Quickshell.Io; Process {}', launcherRoot);
-                    p.command = ["sh", "-c", d.exec]; p.running = true;
-                }
-                launcherRoot.visible = false;
+                launcherRoot.launchApp(appCtxMenu.appData);
+                launcherRoot.close();
             }
         }
         MenuSeparator { contentItem: Rectangle { height: 1; color: Qt.rgba(1,1,1,0.1) } }
