@@ -107,7 +107,7 @@ PopupWindow {
     Rectangle {
         id: launcherContainer
         anchors.fill: parent
-        color: Qt.rgba(ColorService.bgBase.r, ColorService.bgBase.g, ColorService.bgBase.b, 0.96)
+        color: Qt.alpha(ColorService.bgBase, 0.96)
         radius: Theme.radiusLarge
         border.color: Qt.rgba(1, 1, 1, 0.1)
         border.width: 1
