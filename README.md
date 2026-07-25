@@ -12,7 +12,8 @@ A simple quickshell configuration that looks like chromeOS panel (not fully func
 3. NetworkManager (or NetworkManager with iwd backend for some of y'all)
 4. Hyprsunset (for night light)
 5. Bluetooth daemon (optional)
-6. Papirus icon theme
+6. Matugen (optional)
+7. Papirus icon theme
 
 ## What you need to do to get this shell working?
 1. First, go to the prefered directory to clone this repository (i.e Downloads.
@@ -20,6 +21,36 @@ A simple quickshell configuration that looks like chromeOS panel (not fully func
 3. After that, create a new folder inside `~/.config` named `quickshell`
 4. Move the contents inside the cloned directory inside the new folder
 5. Run quickshell (either with `qs` or just `quickshell`)
+
+## Automatic Color Apply (via Matugen)
+- By default, it will use blue colors as it's main palette, and it will hot reload as long as `colors.json` exists in `~/.config/quickshell/`
+- A template for matugen `colors.json` inside `~/.config/matugen/templates/colors.json`
+```json
+{
+    "accent": "{{colors.primary.default.hex}}",
+    "accentDim": "{{colors.primary_container.default.hex}}",
+    "accentOnDim": "{{colors.on_primary_container.default.hex}}",
+    "bgBase": "{{colors.background.default.hex}}",
+    "bgSurface": "{{colors.surface.default.hex}}",
+    "bgElevated": "{{colors.surface_container.default.hex}}",
+    "bgHover": "{{colors.surface_variant.default.hex}}",
+    "textPrimary": "{{colors.on_surface.default.hex}}",
+    "textSecondary": "{{colors.on_surface_variant.default.hex}}",
+    "danger": "{{colors.error.default.hex}}",
+    "success": "{{colors.tertiary.default.hex}}",
+    "outline": "{{colors.outline.default.hex}}"
+}
+```
+- As for the `config.toml` inside `~/.config/matugen/`
+```toml
+[config]
+# Any configuration you want to put here
+
+[templates.quickshell]
+input_path = "~/.config/matugen/templates/qschromeos-bar.json"
+output_path = "~/.config/quickshell/colors.json"
+
+```
 
 ## Previews
 ---
