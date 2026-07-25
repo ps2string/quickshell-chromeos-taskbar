@@ -22,4 +22,4 @@ A simple quickshell configuration that looks like chromeOS panel (not fully func
 5. Run quickshell (either with `qs` or just `quickshell`)
 
 ## Preview
-![image](https://raw.githubusercontent.com/ps2string/quickshell-chromeos-taskbar/refs/heads/main/assets/20260724_105123.png)
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/26396015-5cd7-422d-9a9a-67716dbaea6c" />
