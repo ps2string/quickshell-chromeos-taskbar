@@ -150,12 +150,7 @@ PanelWindow {
     // ===== SHELF BACKGROUND =====
     Rectangle {
         anchors.fill: parent
-        color: Qt.rgba(
-            Qt.darker(ColorService.bgBase, 1.1).r,
-            Qt.darker(ColorService.bgBase, 1.1).g,
-            Qt.darker(ColorService.bgBase, 1.1).b,
-            0.92
-        )
+        color: Qt.alpha(Qt.darker(ColorService.bgBase, 1.1), 0.92)
         layer.enabled: true
 
         Behavior on color { ColorAnimation { duration: 400 } }
@@ -193,7 +188,7 @@ PanelWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 36; height: 36; radius: 18
                 color: launcherMouse.containsMouse
-                    ? Qt.rgba(ColorService.accent.r, ColorService.accent.g, ColorService.accent.b, 0.18)
+                    ? Qt.alpha(ColorService.accent, 0.18)
                     : "transparent"
 
                 Behavior on color { ColorAnimation { duration: 150 } }
@@ -272,7 +267,7 @@ PanelWindow {
                         anchors.verticalCenter: parent.verticalCenter
 
                         color: isActive
-                            ? Qt.rgba(ColorService.accent.r, ColorService.accent.g, ColorService.accent.b, 0.25)
+                            ? Qt.alpha(ColorService.accent, 0.25)
                             : (wsMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(1, 1, 1, 0.05))
                         border.color: isActive ? ColorService.accent : Qt.rgba(1, 1, 1, 0.1)
                         border.width: isActive ? 1.5 : 1
@@ -393,8 +388,8 @@ PanelWindow {
                 implicitWidth: statusRow.implicitWidth + 24
                 radius: 18
                 color: statusMouse.containsMouse
-                    ? Qt.rgba(ColorService.bgHover.r, ColorService.bgHover.g, ColorService.bgHover.b, 1.0)
-                    : Qt.rgba(ColorService.bgSurface.r, ColorService.bgSurface.g, ColorService.bgSurface.b, 0.9)
+                    ? Qt.alpha(ColorService.bgHover, 1.0)
+                    : Qt.alpha(ColorService.bgSurface, 0.9)
                 border.color: Qt.rgba(1, 1, 1, 0.08)
                 border.width: 1
 
