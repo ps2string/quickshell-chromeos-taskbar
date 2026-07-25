@@ -78,6 +78,6 @@ target launcher
 ---
 <img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/56917015-2a6a-4640-a5af-495b1fe8617b" />
 
-- When wallpaper changed:
+### When wallpaper changed:
 <img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/78652dbb-18ad-40f9-8dc2-5ca4a15ad933" />
 <img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/9fbbb5da-3e96-45d1-839c-a51905210403" />
