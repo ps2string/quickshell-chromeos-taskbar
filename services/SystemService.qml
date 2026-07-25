@@ -1,5 +1,6 @@
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Pipewire as Pw
 import QtQuick
 
 pragma Singleton
@@ -8,14 +9,12 @@ Item {
     id: root
 
     // --- State ---
-    property int    volume:        50
-    property bool   isMuted:       false
     property int    brightness:    70
     property int    batteryLevel:  100
     property bool   isCharging:    false
     property string wifiSsid:      "Disconnected"
-    property bool   wifiConnected: false
-    property bool   wifiEnabled:   false 
+    property bool   wifiConnected: false  
+    property bool   wifiEnabled:   false  
     property bool   bluetoothOn:   true
     property bool   dndActive:     false
     property bool   nightLightOn:  false
@@ -32,43 +31,132 @@ Item {
     property var  bluetoothDevices: []
     property bool isScanningBt:     false
 
-    property int _lastVolume:      -1
-    property bool _lastMuted:       false
-    property int _lastBrightness:  -1
-    property int _maxBrightness:   19200
+    // --- Native Pipewire Integration ---
+    Pw.PwObjectTracker {
+        id: pwTracker
+        objects: [
+            Pw.Pipewire.defaultAudioSink,
+            Pw.Pipewire.defaultAudioSource
+        ]
+    }
 
-    Process {
-        id: volGet
-        command: ["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"]
-        running: true
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let text = this.text.trim();
-                let parts = text.split(/\s+/);
-                if (parts.length >= 2) {
-                    let newVol = Math.round(parseFloat(parts[1]) * 100);
-                    let newMuted = text.includes("[MUTED]");
-                    let changed = (newVol !== root._lastVolume || newMuted !== root._lastMuted);
-                    root.volume = newVol;
-                    root.isMuted = newMuted;
-                    if (root._lastVolume >= 0 && changed) {
-                        let icon = newMuted ? "󰖁" : (newVol > 60 ? "󰕾" : (newVol > 0 ? "󰖀" : "󰕿"));
-                        root.showOsd(icon, "Volume", newVol, newMuted);
-                    }
-                    root._lastVolume = newVol;
-                    root._lastMuted  = newMuted;
+    readonly property var activeSink: Pw.Pipewire.defaultAudioSink
+    readonly property var activeSource: Pw.Pipewire.defaultAudioSource
+
+    property int volume: activeSink && activeSink.audio ? Math.round(activeSink.audio.volume * 100) : 0
+    property bool isMuted: activeSink && activeSink.audio ? activeSink.audio.muted : false
+
+    // Robust helper function to extract native PipeWire device names
+    function getNodeLabel(node) {
+        if (!node) return "Unknown Device";
+
+        // Check native Quickshell properties first
+        if (node.description && String(node.description).trim().length > 0) {
+            return String(node.description).trim();
+        }
+        if (node.nick && String(node.nick).trim().length > 0) {
+            return String(node.nick).trim();
+        }
+        if (node.name && String(node.name).trim().length > 0) {
+            return String(node.name).trim();
+        }
+
+        // Fallback to node properties map
+        if (node.properties) {
+            try {
+                let p = node.properties;
+                let desc = p["node.description"] || p["device.description"] || p["node.nick"] || p["media.name"] || p["node.name"];
+                if (desc && String(desc).trim().length > 0) {
+                    return String(desc).trim();
                 }
+            } catch (e) {}
+        }
+
+        return "Audio Device (" + (node.id !== undefined ? node.id : "?") + ")";
+    }
+
+    // Filter node lists to extract input/output devices natively
+    readonly property var audioOutputs: {
+        let outputs = [];
+        if (!Pw.Pipewire.ready) return outputs;
+        
+        let nodes = Pw.Pipewire.nodes.values;
+        for (let i = 0; i < nodes.length; i++) {
+            let node = nodes[i];
+            if (node && node.audio && !node.isStream && node.isSink) {
+                outputs.push({
+                    deviceId: node.id,
+                    deviceLabel: root.getNodeLabel(node),
+                    inUse: activeSink && (activeSink.id === node.id),
+                    rawNode: node
+                });
             }
+        }
+        return outputs;
+    }
+
+    readonly property var audioInputs: {
+        let inputs = [];
+        if (!Pw.Pipewire.ready) return inputs;
+        
+        let nodes = Pw.Pipewire.nodes.values;
+        for (let i = 0; i < nodes.length; i++) {
+            let node = nodes[i];
+            if (node && node.audio && !node.isStream && !node.isSink) {
+                inputs.push({
+                    deviceId: node.id,
+                    deviceLabel: root.getNodeLabel(node),
+                    inUse: activeSource && (activeSource.id === node.id),
+                    rawNode: node
+                });
+            }
+        }
+        return inputs;
+    }
+
+    // OSD Triggering on Volume/Mute Change
+    property int _lastVolume: -1
+    property bool _lastMuted: false
+
+    onVolumeChanged: {
+        if (_lastVolume >= 0 && (volume !== _lastVolume || isMuted !== _lastMuted)) {
+            let icon = isMuted ? "󰖁" : (volume > 60 ? "󰕾" : (volume > 0 ? "󰖀" : "󰕿"));
+            root.showOsd(icon, "Volume", volume, isMuted);
+        }
+        _lastVolume = volume;
+        _lastMuted = isMuted;
+    }
+
+    // Native Control Functions
+    function setVolume(val) {
+        if (activeSink && activeSink.audio) {
+            activeSink.audio.volume = Math.max(0, Math.min(100, Math.round(val))) / 100.0;
         }
     }
 
-    Timer {
-        id: volPollTimer
-        interval: 200
-        running: true
-        repeat: true
-        onTriggered: volGet.running = true
+    function toggleMute() {
+        if (activeSink && activeSink.audio) {
+            activeSink.audio.muted = !activeSink.audio.muted;
+        }
     }
+
+    function setAudioOutput(nodeObj) {
+        let targetNode = nodeObj.rawNode || nodeObj;
+        if (targetNode) {
+            Pw.Pipewire.preferredDefaultAudioSink = targetNode;
+        }
+    }
+
+    function setAudioInput(nodeObj) {
+        let targetNode = nodeObj.rawNode || nodeObj;
+        if (targetNode) {
+            Pw.Pipewire.preferredDefaultAudioSource = targetNode;
+        }
+    }
+
+    // --- Brightness ---
+    property int _lastBrightness:  -1
+    property int _maxBrightness:   19200
 
     Process {
         id: brightGet
@@ -98,6 +186,7 @@ Item {
         onTriggered: brightGet.running = true
     }
 
+    // --- Battery ---
     Process {
         id: batGet
         command: ["cat", "/sys/class/power_supply/BAT0/capacity"]
@@ -120,6 +209,7 @@ Item {
         }
     }
 
+    // --- Wi-Fi ---
     Process {
         id: wifiGet
         command: ["bash", "-c",
@@ -214,7 +304,6 @@ Item {
 
                 root.isConnectingWifi = false;
                 root.wifiConnectResult(ok, msg);
-
                 wifiGet.running = true;
                 if (ok) {
                     wifiRefreshTimer.start();
@@ -233,6 +322,7 @@ Item {
         }
     }
 
+    // --- Bluetooth ---
     Process {
         id: btCheck
         command: ["bash", "-c", "rfkill list bluetooth | grep -q 'Soft blocked: no' && echo 'on' || echo 'off'"]
@@ -267,12 +357,13 @@ Item {
         }
     }
 
-    Process { id: setVolProc }
+    // System utility action processes
     Process { id: setBrightProc }
     Process { id: setWifiProc }
     Process { id: setBtProc }
     Process { id: setNightLightProc }
 
+    // DND state reader
     Process {
         id: dndGetProc
         command: ["swaync-client", "--get-dnd"]
@@ -284,6 +375,7 @@ Item {
         }
     }
 
+    // Night Light state reader
     Process {
         id: nightLightGetProc
         command: ["bash", "-c", "pgrep -x hyprsunset >/dev/null && echo 'on' || echo 'off'"]
@@ -294,6 +386,7 @@ Item {
         }
     }
 
+    // Periodic refresh for non-Pipewire components
     Timer {
         interval: 5000
         running: true
@@ -307,27 +400,12 @@ Item {
     }
 
     function refresh() {
-        volGet.running            = true;
         batGet.running            = true;
         batStatus.running         = true;
         wifiGet.running           = true;
         btCheck.running           = true;
-        dndGetProc.running        = true; 
-        nightLightGetProc.running = true; 
-    }
-
-    function setVolume(val) {
-        // volume OSD fires automatically via volPollTimer detecting the change
-        root.volume = Math.max(0, Math.min(100, Math.round(val)));
-        let p = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
-        p.command = ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", (root.volume / 100.0).toFixed(2)];
-        p.running = true;
-    }
-
-    function toggleMute() {
-        let p = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
-        p.command = ["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"];
-        p.running = true;
+        dndGetProc.running        = true;
+        nightLightGetProc.running = true;
     }
 
     function setBrightness(val) {
