@@ -16,6 +16,7 @@ RowLayout {
             id: itemDelegate
             required property SystemTrayItem modelData
 
+            // Reverted back to your original perfect circle style
             implicitWidth: 32
             implicitHeight: 32
             radius: 16
@@ -33,32 +34,33 @@ RowLayout {
                 source: modelData.icon
             }
 
-            // Right-click context menu anchor
+            // Wayland-aware Context Menu Anchor (keeps the fix that makes it open upwards)
             QsMenuAnchor {
                 id: menuAnchor
                 menu: modelData.menu
-                anchor.window: trayRoot.Window.window
+                
+                anchor {
+                    item: itemDelegate
+                    edges: Edges.Top
+                    gravity: Edges.Top
+                }
             }
 
             // Mouse interactions
             MouseArea {
                 id: mouseArea
                 anchors.fill: parent
-                acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
 
                 onClicked: mouse => {
                     if (mouse.button === Qt.RightButton) {
-                        if (modelData.hasMenu && menuAnchor.menu) {
+                        if (modelData.hasMenu) {
                             menuAnchor.open();
-                        } else {
-                            modelData.contextMenu(mouse.x, mouse.y);
                         }
                     } else if (mouse.button === Qt.LeftButton) {
                         modelData.activate();
-                    } else if (mouse.button === Qt.MiddleButton) {
-                        modelData.secondaryActivate();
                     }
                 }
             }
