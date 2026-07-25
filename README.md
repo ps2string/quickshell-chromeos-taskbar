@@ -13,8 +13,9 @@ A simple quickshell configuration that looks like chromeOS panel (not fully func
 3. NetworkManager (or NetworkManager with iwd backend for some of y'all)
 4. Hyprsunset (for night light)
 5. Bluetooth daemon (optional)
+6. Papirus icon theme
 
-## What you need to do?
+## What you need to do to get this shell working?
 1. First, go to the prefered directory to clone this repository (i.e Downloads.
 2. Then run `git clone https://github.com/ps2string/quickshell-chromeos-taskbar`
 3. After that, create a new folder inside `~/.config` named `quickshell`
