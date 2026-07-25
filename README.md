@@ -17,7 +17,7 @@ A simple quickshell configuration that looks like chromeOS panel.
 8. SwayNC (for notifications)
 
 ## What you need to do to get this shell working?
-1. First, go to the prefered directory to clone this repository (i.e Downloads.
+1. First, go to the prefered directory to clone this repository (i.e Downloads).
 2. Then run `git clone https://github.com/ps2string/quickshell-chromeos-taskbar`
 3. After that, create a new folder inside `~/.config` named `quickshell`
 4. Move the contents inside the cloned directory inside the new folder
