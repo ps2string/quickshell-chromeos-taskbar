@@ -1,5 +1,5 @@
 # ChromeOS Taskbar (Quickshell)
-A simple quickshell configuration that looks like chromeOS panel (not fully functional as of now).
+A simple quickshell configuration that looks like chromeOS panel.
 
 > [!NOTE]
 > Strictly speaking, this is a hyprland's only quickshell configuration (for now) so, do not expect it to work outside the environment, you may try, but I won't guarantee a fully functional bar.
@@ -65,6 +65,11 @@ target launcher
 - `open` opens the launcher (`qs -p ~/.config/quickshell ipc call launcher open`)
 - `toggle` opens/closes the launcher (`qs -p ~/.config/quickshell ipc call launcher toggle`)
 - `close` closes the launcher (`qs -p ~/.config/quickshell ipc call launcher close`)
+
+## Known Bugs:
+- Clicking on running apps doesn't open the specific app
+- Icons on running apps doesn't show what app is it (therefore unable to pin it without causing another bug)
+- Pinning on running apps (that uses its title as the icon) are discouraged cause you can't remove it once you've pinned it (unless you just delete its entry inside `~/.config/quickshell/pins.json`)
 
 ## Previews
 ---
