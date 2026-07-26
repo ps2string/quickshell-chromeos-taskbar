@@ -10,7 +10,7 @@ PopupWindow {
     id: qsRoot
 
     implicitWidth:  360
-    implicitHeight: 400
+    implicitHeight: currentView === "main" ? (mainLayout.implicitHeight + 32) : 400
     visible: false
     color: "transparent"
     grabFocus: true
@@ -18,6 +18,8 @@ PopupWindow {
     property string currentView: "main" 
     property string selectedWifiSsid: ""
     property string wifiPasswordInput: ""
+
+    property bool   powerExpanded: false
 
     property string _toastMsg: ""
     property bool   _toastOk:  true
@@ -45,6 +47,7 @@ PopupWindow {
             currentView = "main";
             selectedWifiSsid = "";
             wifiPasswordInput = "";
+            powerExpanded = false;
             SystemService.refresh();
         }
     }
@@ -61,7 +64,10 @@ PopupWindow {
         // VIEW 1: MAIN QUICK SETTINGS PANEL
         // =========================================================
         ColumnLayout {
-            anchors.fill: parent
+            id: mainLayout
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
             anchors.margins: 16
             spacing: 12
             visible: qsRoot.currentView === "main"
@@ -70,6 +76,7 @@ PopupWindow {
                 Layout.fillWidth: true
                 spacing: 10
 
+                // Avatar Icon
                 Rectangle {
                     width: 36; height: 36; radius: 18
                     gradient: Gradient {
@@ -87,9 +94,13 @@ PopupWindow {
                     }
                 }
 
-                Column {
+                // Flexible User Info
+                ColumnLayout {
+                    Layout.fillWidth: true
                     spacing: 2
+
                     Text {
+                        Layout.fillWidth: true
                         text: {
                             let u = Quickshell.env("USER") || "User";
                             return u.charAt(0).toUpperCase() + u.slice(1);
@@ -98,9 +109,11 @@ PopupWindow {
                         font.family: Theme.fontMain
                         font.pixelSize: 14
                         font.bold: true
+                        elide: Text.ElideRight
                         Behavior on color { ColorAnimation { duration: 400 } }
                     }
                     Text {
+                        Layout.fillWidth: true
                         text: SystemService.wifiConnected ? SystemService.wifiSsid : "Wi-Fi disconnected"
                         color: ColorService.textSecondary
                         font.family: Theme.fontMain
@@ -110,13 +123,66 @@ PopupWindow {
                     }
                 }
 
-                Item { Layout.fillWidth: true }
+                // ChromeOS-style Expanding Power Menu
+                Rectangle {
+                    id: powerMenu
+                    Layout.alignment: Qt.AlignRight // <-- Keeps it pinned right in the RowLayout
+                    implicitWidth: qsRoot.powerExpanded ? 112 : 32 // <-- Use implicitWidth for Layout animations
+                    height: 32
+                    radius: 16
+                    color: qsRoot.powerExpanded ? ColorService.bgElevated : "transparent"
+                    border.color: qsRoot.powerExpanded ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+                    border.width: qsRoot.powerExpanded ? 1 : 0
+                    clip: true
 
-                Row {
-                    spacing: 6
-                    QsIconBtn { icon: "󰌾"; tooltip: "Lock screen"; onAct: SystemService.lockScreen() }
-                    QsIconBtn { icon: "󰜉"; tooltip: "Restart"; onAct: SystemService.reboot() }
-                    QsIconBtn { icon: "󰐥"; tooltip: "Power off"; danger: true; onAct: SystemService.powerOff() }
+                    Behavior on implicitWidth { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                    Behavior on color { ColorAnimation { duration: 200 } }
+
+                    RowLayout {
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 4
+
+                        // 1. Log out
+                        QsIconBtn {
+                            visible: qsRoot.powerExpanded
+                            icon: "󰍃"
+                            tooltip: "Log out"
+                            onAct: {
+                                qsRoot.powerExpanded = false;
+                                if (typeof SystemService.logout === "function") {
+                                    SystemService.logout();
+                                } else {
+                                    SystemService.lockScreen();
+                                }
+                            }
+                        }
+
+                        // 2. Restart
+                        QsIconBtn {
+                            visible: qsRoot.powerExpanded
+                            icon: "󰜉"
+                            tooltip: "Restart"
+                            onAct: {
+                                qsRoot.powerExpanded = false;
+                                SystemService.reboot();
+                            }
+                        }
+
+                        // 3. Power Off / Menu Toggle
+                        QsIconBtn {
+                            icon: "󰐥"
+                            tooltip: qsRoot.powerExpanded ? "Power off" : "Power menu"
+                            danger: true
+                            onAct: {
+                                if (!qsRoot.powerExpanded) {
+                                    qsRoot.powerExpanded = true;
+                                } else {
+                                    SystemService.powerOff();
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -236,8 +302,6 @@ PopupWindow {
                     }
                 }
             }
-
-            Item { Layout.fillHeight: true }
         }
 
         // =========================================================
@@ -664,7 +728,7 @@ PopupWindow {
         }
 
         // =========================================================
-        // VIEW 4: AUDIO DEVICES SUB-PAGE (PipeWire Native Integration)
+        // VIEW 4: AUDIO DEVICES SUB-PAGE
         // =========================================================
         ColumnLayout {
             anchors.fill: parent
@@ -704,7 +768,6 @@ PopupWindow {
                     width: audioScroll.width
                     spacing: 8
 
-                    // OUTPUT SECTION
                     Text {
                         text: "Output"
                         color: ColorService.accent
@@ -785,7 +848,6 @@ PopupWindow {
                         Layout.bottomMargin: 4
                     }
 
-                    // INPUT SECTION
                     Text {
                         text: "Input"
                         color: ColorService.accent
