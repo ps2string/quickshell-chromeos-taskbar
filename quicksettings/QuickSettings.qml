@@ -60,9 +60,6 @@ PopupWindow {
         border.width: 1
         Behavior on color { ColorAnimation { duration: 400 } }
 
-        // =========================================================
-        // VIEW 1: MAIN QUICK SETTINGS PANEL
-        // =========================================================
         ColumnLayout {
             id: mainLayout
             anchors.left: parent.left
@@ -76,7 +73,6 @@ PopupWindow {
                 Layout.fillWidth: true
                 spacing: 10
 
-                // Avatar Icon
                 Rectangle {
                     width: 36; height: 36; radius: 18
                     gradient: Gradient {
@@ -94,7 +90,6 @@ PopupWindow {
                     }
                 }
 
-                // Flexible User Info
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 2
@@ -123,11 +118,10 @@ PopupWindow {
                     }
                 }
 
-                // ChromeOS-style Expanding Power Menu
                 Rectangle {
                     id: powerMenu
-                    Layout.alignment: Qt.AlignRight // <-- Keeps it pinned right in the RowLayout
-                    implicitWidth: qsRoot.powerExpanded ? 112 : 32 // <-- Use implicitWidth for Layout animations
+                    Layout.alignment: Qt.AlignRight
+                    implicitWidth: qsRoot.powerExpanded ? 112 : 32 
                     height: 32
                     radius: 16
                     color: qsRoot.powerExpanded ? ColorService.bgElevated : "transparent"
@@ -143,7 +137,7 @@ PopupWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 4
 
-                        // 1. Log out
+                      
                         QsIconBtn {
                             visible: qsRoot.powerExpanded
                             icon: "󰍃"
@@ -158,7 +152,7 @@ PopupWindow {
                             }
                         }
 
-                        // 2. Restart
+                      
                         QsIconBtn {
                             visible: qsRoot.powerExpanded
                             icon: "󰜉"
@@ -169,7 +163,7 @@ PopupWindow {
                             }
                         }
 
-                        // 3. Power Off / Menu Toggle
+                 
                         QsIconBtn {
                             icon: "󰐥"
                             tooltip: qsRoot.powerExpanded ? "Power off" : "Power menu"
@@ -304,9 +298,6 @@ PopupWindow {
             }
         }
 
-        // =========================================================
-        // VIEW 2: WI-FI NETWORKS SUB-PAGE
-        // =========================================================
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 16
@@ -550,9 +541,6 @@ PopupWindow {
             }
         }
 
-        // =========================================================
-        // VIEW 3: BLUETOOTH DEVICES SUB-PAGE
-        // =========================================================
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 16
@@ -727,9 +715,6 @@ PopupWindow {
             }
         }
 
-        // =========================================================
-        // VIEW 4: AUDIO DEVICES SUB-PAGE
-        // =========================================================
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 16
@@ -931,8 +916,6 @@ PopupWindow {
             }
         }
     }
-
-    // ---- Helper components ----
 
     component QsIconBtn: Rectangle {
         id: iconBtn
