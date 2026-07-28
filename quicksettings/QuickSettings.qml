@@ -11,7 +11,9 @@ PopupWindow {
 
     implicitWidth:  360
     implicitHeight: currentView === "main" ? (mainLayout.implicitHeight + 32) : 400
-    visible: false
+    
+    property bool isOpen: false
+    
     color: "transparent"
     grabFocus: true
 
@@ -35,25 +37,54 @@ PopupWindow {
         }
     }
 
-    Timer {
-        id: toastTimer
-        interval: 4000
-        repeat: false
-        onTriggered: qsRoot._toastVisible = false
-    }
+       Timer {
+           id: closeTimer
+           interval: 250 
+           onTriggered: qsRoot.visible = false
+       }
+   
+       onVisibleChanged: {
+           if (!qsRoot.visible && qsRoot.isOpen) {
+               qsRoot.isOpen = false;
+               closeTimer.stop();
+           }
+       }
+   
+       onIsOpenChanged: {
+           if (isOpen) {
 
-    onVisibleChanged: {
-        if (visible) {
-            currentView = "main";
-            selectedWifiSsid = "";
-            wifiPasswordInput = "";
-            powerExpanded = false;
-            SystemService.refresh();
-        }
-    }
+               closeTimer.stop();
+               qsRoot.visible = true;
+               
+               currentView = "main";
+               selectedWifiSsid = "";
+               wifiPasswordInput = "";
+               powerExpanded = false;
+               SystemService.refresh();
+           } else {
+               if (qsRoot.visible) {
+                   closeTimer.restart();
+               }
+           }
+       }
 
     Rectangle {
+        id: bgRect
         anchors.fill: parent
+        
+        opacity: qsRoot.isOpen ? 1.0 : 0.0
+        Behavior on opacity { 
+            NumberAnimation { duration: 250; easing.type: Easing.InOutQuad } 
+        }
+
+        transform: Translate {
+            y: qsRoot.isOpen ? 0 : 20
+            Behavior on y { 
+                NumberAnimation { duration: 250; easing.type: Easing.OutCubic } 
+            }
+        }
+
+
         color: Qt.alpha(ColorService.bgBase, 0.96)
         radius: Theme.radiusLarge
         border.color: Qt.rgba(1, 1, 1, 0.1)
@@ -120,7 +151,7 @@ PopupWindow {
 
                 Rectangle {
                     id: powerMenu
-                    Layout.alignment: Qt.AlignRight
+                    Layout.alignment: Qt.AlignRight 
                     implicitWidth: qsRoot.powerExpanded ? 112 : 32 
                     height: 32
                     radius: 16
@@ -137,7 +168,6 @@ PopupWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 4
 
-                      
                         QsIconBtn {
                             visible: qsRoot.powerExpanded
                             icon: "󰍃"
@@ -152,7 +182,6 @@ PopupWindow {
                             }
                         }
 
-                      
                         QsIconBtn {
                             visible: qsRoot.powerExpanded
                             icon: "󰜉"
@@ -163,7 +192,6 @@ PopupWindow {
                             }
                         }
 
-                 
                         QsIconBtn {
                             icon: "󰐥"
                             tooltip: qsRoot.powerExpanded ? "Power off" : "Power menu"
