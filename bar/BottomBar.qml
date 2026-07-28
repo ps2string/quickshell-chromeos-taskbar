@@ -9,7 +9,6 @@ import ".."
 import "../services"
 import "../components"
 
-// ChromeOS-style bottom shelf / taskbar
 PanelWindow {
     id: barWindow
 
@@ -28,7 +27,6 @@ PanelWindow {
         requestShelfContextMenu(item, posX);
     }
 
-    // --- Time / Date ---
     property string currentTime: "00:00"
     property string currentDate: "Jan 1"
     property string currentDay:  "Mon"
@@ -124,7 +122,6 @@ PanelWindow {
     }
     Timer { interval: 10000; running: true; repeat: true; onTriggered: clockProc.running = true }
 
-    // --- Wallpaper watcher ---
     Connections {
         target: Hyprland
         function onRawEvent(event) {
@@ -147,7 +144,6 @@ PanelWindow {
 
     color: "transparent"
 
-    // ===== SHELF BACKGROUND =====
     Rectangle {
         anchors.fill: parent
         color: Qt.alpha(Qt.darker(ColorService.bgBase, 1.1), 0.92)
@@ -156,7 +152,6 @@ PanelWindow {
         Behavior on color { ColorAnimation { duration: 400 } }
     }
 
-    // Top border line
     Rectangle {
         anchors.top: parent.top
         anchors.left: parent.left
@@ -171,9 +166,7 @@ PanelWindow {
         anchors.leftMargin: 8
         anchors.rightMargin: 8
 
-        // =========================================================
         // LEFT: Launcher + Workspaces (Desks)
-        // =========================================================
         Item {
             id: leftSection
             anchors.left: parent.left
@@ -181,7 +174,6 @@ PanelWindow {
             width: launcherBtn.width + workspaceRow.width + 12
             height: parent.height
 
-            // Launcher button
             Rectangle {
                 id: launcherBtn
                 anchors.left: parent.left
@@ -193,7 +185,6 @@ PanelWindow {
 
                 Behavior on color { ColorAnimation { duration: 150 } }
 
-                // ChromeOS Ring Launcher Icon
                 Item {
                     anchors.centerIn: parent
                     width: 20
@@ -227,7 +218,6 @@ PanelWindow {
                 }
             }
 
-            // ChromeOS Desk Workspaces
             Row {
                 id: workspaceRow
                 anchors.left: launcherBtn.right
@@ -260,7 +250,6 @@ PanelWindow {
                             return fw ? fw.id === wsId : false;
                         }
 
-                        // ChromeOS Desk Pill layout
                         implicitWidth: wsText.implicitWidth + 18
                         height: 26
                         radius: 13
@@ -299,9 +288,7 @@ PanelWindow {
             }
         }
 
-        // =========================================================
         // CENTER: Pinned Apps + Open Windows Dock
-        // =========================================================
         Row {
             id: centerDock
             anchors.centerIn: parent
@@ -366,21 +353,17 @@ PanelWindow {
             }
         }
 
-        // =========================================================
         // RIGHT: System Tray + ChromeOS Quick Settings Pod
-        // =========================================================
         RowLayout {
             id: rightSection
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
 
-            // 1. System Tray Icons
             SystemTray {
                 Layout.alignment: Qt.AlignVCenter
             }
 
-            // 2. Official ChromeOS Quick Settings Pill
             Rectangle {
                 id: statusPill
                 Layout.alignment: Qt.AlignVCenter
@@ -400,7 +383,6 @@ PanelWindow {
                     anchors.centerIn: parent
                     spacing: 10
 
-                    // Network
                     Text {
                         text: SystemService.wifiConnected ? "󰤨" : "󰤭"
                         font.family: Theme.fontIcon
@@ -409,7 +391,6 @@ PanelWindow {
                         Layout.alignment: Qt.AlignVCenter
                     }
 
-                    // Volume
                     Text {
                         text: SystemService.isMuted ? "󰖁" : (SystemService.volume > 60 ? "󰕾" : (SystemService.volume > 0 ? "󰖀" : "󰕿"))
                         font.family: Theme.fontIcon
@@ -418,7 +399,6 @@ PanelWindow {
                         Layout.alignment: Qt.AlignVCenter
                     }
 
-                    // Battery
                     RowLayout {
                         spacing: 3
                         Layout.alignment: Qt.AlignVCenter
@@ -446,7 +426,6 @@ PanelWindow {
                         }
                     }
 
-                    // ChromeOS Vertical Divider Separator
                     Rectangle {
                         width: 1
                         height: 16
@@ -454,7 +433,6 @@ PanelWindow {
                         Layout.alignment: Qt.AlignVCenter
                     }
 
-                    // Time & Date inside Quick Settings pod
                     RowLayout {
                         spacing: 6
                         Layout.alignment: Qt.AlignVCenter
