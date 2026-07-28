@@ -7,9 +7,6 @@ import Quickshell.Io
 import ".."
 import "../services"
 
-// A single item on the ChromeOS shelf.
-// Handles both pinned-only apps (no window) and open windows.
-// Shows tooltip, active indicator dot, and right-click context menu.
 
 Item {
     id: root
@@ -27,7 +24,6 @@ Item {
             let iCls = t.lastIpcObject["initialClass"];
             if (iCls && typeof iCls === "string" && iCls.length > 0) return iCls;
         }
-        // Wayland ToplevelManager toplevels
         if (t.appId && typeof t.appId === "string" && t.appId.length > 0) return t.appId;
         return "";
     }
@@ -88,7 +84,6 @@ Item {
 
     width: 44; height: 44
 
-    // ---- Hover background ----
     Rectangle {
         id: hoverBg
         anchors.centerIn: parent
@@ -101,7 +96,6 @@ Item {
         Behavior on color { ColorAnimation { duration: 150 } }
     }
 
-    // ---- App icon ----
     IconImage {
         id: appIcon
         anchors.centerIn: parent
@@ -111,7 +105,6 @@ Item {
         visible: backer.status === Image.Ready
     }
 
-    // ---- Fallback letter ----
     Rectangle {
         anchors.centerIn: parent
         width: 28; height: 28; radius: 8
@@ -129,14 +122,12 @@ Item {
         }
     }
 
-    // ---- Active / open indicator dots (ChromeOS style) ----
     Row {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 2
         anchors.horizontalCenter: parent.horizontalCenter
         spacing: 3
 
-        // Single dot for open but not active, filled accent for active
         Rectangle {
             width: isActive ? 14 : 4
             height: 3; radius: 2
@@ -148,7 +139,6 @@ Item {
         }
     }
 
-    // ---- Tooltip ----
     ToolTip {
         id: tooltip
         text: displayName
@@ -197,7 +187,6 @@ Item {
 
     signal requestContextMenu(real mouseX, real mouseY)
 
-    // ---- Mouse interaction ----
     MouseArea {
         id: itemArea
         anchors.fill: parent
@@ -212,13 +201,11 @@ Item {
             }
             if (openToplevel) {
                 if (isActive) {
-                    // Already focused — toggle minimize / special workspace
                     Hyprland.dispatch("togglespecialworkspace");
                 } else {
                     root.activateWindow();
                 }
             } else if (pinData && pinData.exec) {
-                // Launch the pinned app
                 let p = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
                 p.command = ["sh", "-c", pinData.exec];
                 p.running = true;
