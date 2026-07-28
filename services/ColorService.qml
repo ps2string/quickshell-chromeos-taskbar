@@ -12,14 +12,12 @@ Item {
     FileView {
         path: root.themePath
         watchChanges: true
-        blockLoading: true // Blocks startup briefly so colors are loaded BEFORE windows render
+        blockLoading: true
         onFileChanged: reload()
 
         JsonAdapter {
             id: jsonColors
 
-            // Define fallback defaults here.
-            // If colors.json exists and has these keys, they will overwrite these values.
             property string accent:        "#8ab4f8"
             property string accentDim:     "#283b5b"
             property string accentOnDim:   "#c0d8ff"
@@ -35,7 +33,6 @@ Item {
         }
     }
 
-    // Bind color properties to the adapter values
     readonly property color accent:        jsonColors.accent
     readonly property color accentDim:     jsonColors.accentDim
     readonly property color accentOnDim:   jsonColors.accentOnDim
@@ -49,11 +46,9 @@ Item {
     readonly property color success:       jsonColors.success
     readonly property color outline:       jsonColors.outline
 
-    // --- Fonts ---
     readonly property string fontMain: "SF Pro Rounded"
     readonly property string fontIcon: "JetBrainsMono Nerd Font"
 
-    // --- Geometry ---
     readonly property int radiusSmall:  8
     readonly property int radiusMedium: 16
     readonly property int radiusLarge:  24
