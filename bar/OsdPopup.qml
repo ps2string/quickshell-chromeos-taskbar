@@ -4,7 +4,6 @@ import QtQuick.Layouts
 import ".."
 import "../services"
 
-// ChromeOS-style On-Screen Display (OSD) pill popout for Volume & Brightness changes
 PopupWindow {
     id: osdRoot
 
@@ -41,7 +40,6 @@ PopupWindow {
         border.color: Qt.rgba(1, 1, 1, 0.13)
         border.width: 1
 
-        // Subtle drop shadow effect via layered rects
         layer.enabled: true
 
         RowLayout {
@@ -52,7 +50,6 @@ PopupWindow {
             anchors.bottomMargin: 0
             spacing: 12
 
-            // Icon
             Text {
                 text: osdRoot.isMuted ? "󰖁" : osdRoot.iconText
                 font.family: Theme.fontIcon
@@ -63,7 +60,6 @@ PopupWindow {
                 Behavior on color { ColorAnimation { duration: 150 } }
             }
 
-            // Progress track
             Rectangle {
                 Layout.fillWidth: true
                 implicitWidth: 140
@@ -79,7 +75,6 @@ PopupWindow {
                 }
             }
 
-            // Value text
             Text {
                 text: osdRoot.isMuted ? "Muted" : (Math.round(osdRoot.levelValue) + "%")
                 color: Qt.rgba(1, 1, 1, 0.9)
