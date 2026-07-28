@@ -7,8 +7,6 @@ import QtQuick.Controls
 import ".."
 import "../services"
 
-// ChromeOS-style app launcher / app drawer
-// Opens bottom-left, shows pinned apps row + all-apps grid (or list view on search)
 
 PopupWindow {
     id: launcherRoot
@@ -21,7 +19,6 @@ PopupWindow {
 
     property bool isOpen: false
 
-    // Launch helper function
     function launchApp(appData) {
         if (!appData) return;
         if (appData.execute) {
@@ -33,7 +30,6 @@ PopupWindow {
         }
     }
 
-    // Safely retrieve and filter application list
     function getFilteredApps() {
         let all = [];
         if (typeof DesktopEntries !== "undefined" && DesktopEntries.applications && DesktopEntries.applications.values) {
@@ -55,7 +51,6 @@ PopupWindow {
         });
     }
 
-    // Launch top search result
     function launchFirstResult() {
         let results = getFilteredApps();
         if (results.length > 0) {
@@ -64,7 +59,6 @@ PopupWindow {
         }
     }
 
-    // Control functions
     function open() {
         searchInput.text = "";
         visible = true;
@@ -82,7 +76,6 @@ PopupWindow {
         else open();
     }
 
-    // Timer to allow slide-down animation to finish before hiding window
     Timer {
         id: closeTimer
         interval: 250
@@ -93,7 +86,6 @@ PopupWindow {
         }
     }
 
-    // Catch external visibility toggles
     onVisibleChanged: {
         if (visible) {
             searchInput.text = "";
@@ -115,7 +107,6 @@ PopupWindow {
         layer.enabled: true
         layer.effect: null
 
-        // ChromeOS Slide & Fade Animations
         opacity: launcherRoot.isOpen ? 1.0 : 0.0
         transform: Translate {
             y: launcherRoot.isOpen ? 0 : 40
@@ -141,7 +132,6 @@ PopupWindow {
             anchors.margins: 20
             spacing: 14
 
-            // ---- Search bar ----
             Rectangle {
                 Layout.fillWidth: true
                 height: 48
@@ -181,7 +171,6 @@ PopupWindow {
                         Keys.onEnterPressed: launcherRoot.launchFirstResult()
                     }
 
-                    // Clear button
                     Rectangle {
                         width: 24; height: 24; radius: 12
                         color: clearArea.containsMouse ? ColorService.bgHover : "transparent"
@@ -203,7 +192,6 @@ PopupWindow {
                 }
             }
 
-            // ---- Pinned / Recent section label ----
             Text {
                 visible: searchInput.text.length === 0
                 text: "Pinned"
@@ -215,7 +203,6 @@ PopupWindow {
                 leftPadding: 4
             }
 
-            // ---- Pinned apps quick row ----
             Row {
                 visible: searchInput.text.length === 0
                 spacing: 6
@@ -287,15 +274,12 @@ PopupWindow {
                 }
             }
 
-            // Divider
             Rectangle {
                 visible: searchInput.text.length === 0
                 Layout.fillWidth: true
                 height: 1
                 color: Qt.rgba(1, 1, 1, 0.07)
             }
-
-            // ---- Section label ----
             Text {
                 text: searchInput.text.length === 0 ? "All apps" : ("Results for \"" + searchInput.text + "\"")
                 color: ColorService.textSecondary
@@ -307,13 +291,11 @@ PopupWindow {
                 Behavior on color { ColorAnimation { duration: 400 } }
             }
 
-            // ---- Content Container (Grid for default, List for Search) ----
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
 
-                // --- Grid View (Default "All Apps") ---
                 GridView {
                     id: appGrid
                     anchors.fill: parent
@@ -338,7 +320,6 @@ PopupWindow {
                                 anchors.centerIn: parent
                                 spacing: 8
 
-                                // Icon frame
                                 Rectangle {
                                     Layout.alignment: Qt.AlignHCenter
                                     width: 52; height: 52
@@ -401,7 +382,6 @@ PopupWindow {
                     }
                 }
 
-                // --- List View (Used when searching) ---
                 ListView {
                     id: appList
                     anchors.fill: parent
@@ -427,7 +407,6 @@ PopupWindow {
                                 anchors.rightMargin: 12
                                 spacing: 14
 
-                                // Icon
                                 Rectangle {
                                     width: 36; height: 36
                                     radius: 10
@@ -456,7 +435,6 @@ PopupWindow {
                                     }
                                 }
 
-                                // App Name & Description
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     Layout.alignment: Qt.AlignVCenter
@@ -507,7 +485,6 @@ PopupWindow {
         }
     }
 
-    // Context menu for app items
     Menu {
         id: appCtxMenu
         property var appData: null
