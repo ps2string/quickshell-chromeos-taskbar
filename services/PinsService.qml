@@ -15,11 +15,8 @@ Item {
 
     readonly property string _pinsFile: "/home/zafran/.config/quickshell/pins.json"
 
-    // Default pins if no file exists
     readonly property var _defaults: [
-        { appId: "floorp",   name: "Floorp Browser", exec: "floorp",   icon: "floorp" },
-        { appId: "kitty",    name: "Terminal",       exec: "kitty",    icon: "kitty" },
-        { appId: "obsidian", name: "Obsidian",       exec: "obsidian", icon: "obsidian" }
+        { appId: "floorp",   name: "Files", exec: "nautilus",   icon: "nautilus" },
     ]
 
     Process {
