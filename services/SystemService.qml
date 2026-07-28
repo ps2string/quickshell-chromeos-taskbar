@@ -8,7 +8,6 @@ pragma Singleton
 Item {
     id: root
 
-    // --- State ---
     property int    brightness:    70
     property int    batteryLevel:  100
     property bool   isCharging:    false
@@ -31,7 +30,6 @@ Item {
     property var  bluetoothDevices: []
     property bool isScanningBt:     false
 
-    // --- Native Pipewire Integration ---
     Pw.PwObjectTracker {
         id: pwTracker
         objects: [
@@ -46,11 +44,9 @@ Item {
     property int volume: activeSink && activeSink.audio ? Math.round(activeSink.audio.volume * 100) : 0
     property bool isMuted: activeSink && activeSink.audio ? activeSink.audio.muted : false
 
-    // Robust helper function to extract native PipeWire device names
     function getNodeLabel(node) {
         if (!node) return "Unknown Device";
 
-        // Check native Quickshell properties first
         if (node.description && String(node.description).trim().length > 0) {
             return String(node.description).trim();
         }
@@ -61,7 +57,6 @@ Item {
             return String(node.name).trim();
         }
 
-        // Fallback to node properties map
         if (node.properties) {
             try {
                 let p = node.properties;
@@ -75,7 +70,6 @@ Item {
         return "Audio Device (" + (node.id !== undefined ? node.id : "?") + ")";
     }
 
-    // Filter node lists to extract input/output devices natively
     readonly property var audioOutputs: {
         let outputs = [];
         if (!Pw.Pipewire.ready) return outputs;
@@ -114,7 +108,6 @@ Item {
         return inputs;
     }
 
-    // OSD Triggering on Volume/Mute Change
     property int _lastVolume: -1
     property bool _lastMuted: false
 
@@ -127,7 +120,6 @@ Item {
         _lastMuted = isMuted;
     }
 
-    // Native Control Functions
     function setVolume(val) {
         if (activeSink && activeSink.audio) {
             activeSink.audio.volume = Math.max(0, Math.min(100, Math.round(val))) / 100.0;
@@ -154,7 +146,6 @@ Item {
         }
     }
 
-    // --- Brightness ---
     property int _lastBrightness:  -1
     property int _maxBrightness:   19200
 
@@ -186,7 +177,6 @@ Item {
         onTriggered: brightGet.running = true
     }
 
-    // --- Battery ---
     Process {
         id: batGet
         command: ["cat", "/sys/class/power_supply/BAT0/capacity"]
@@ -209,7 +199,6 @@ Item {
         }
     }
 
-    // --- Wi-Fi ---
     Process {
         id: wifiGet
         command: ["bash", "-c",
@@ -322,7 +311,6 @@ Item {
         }
     }
 
-    // --- Bluetooth ---
     Process {
         id: btCheck
         command: ["bash", "-c", "rfkill list bluetooth | grep -q 'Soft blocked: no' && echo 'on' || echo 'off'"]
@@ -357,13 +345,11 @@ Item {
         }
     }
 
-    // System utility action processes
     Process { id: setBrightProc }
     Process { id: setWifiProc }
     Process { id: setBtProc }
     Process { id: setNightLightProc }
 
-    // DND state reader
     Process {
         id: dndGetProc
         command: ["swaync-client", "--get-dnd"]
@@ -386,7 +372,6 @@ Item {
         }
     }
 
-    // Periodic refresh for non-Pipewire components
     Timer {
         interval: 5000
         running: true
