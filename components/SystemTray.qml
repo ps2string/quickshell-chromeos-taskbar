@@ -16,7 +16,6 @@ RowLayout {
             id: itemDelegate
             required property SystemTrayItem modelData
 
-            // Reverted back to your original perfect circle style
             implicitWidth: 32
             implicitHeight: 32
             radius: 16
@@ -26,7 +25,6 @@ RowLayout {
 
             Behavior on color { ColorAnimation { duration: 150 } }
 
-            // Icon display
             IconImage {
                 anchors.centerIn: parent
                 width: 18
@@ -34,7 +32,6 @@ RowLayout {
                 source: modelData.icon
             }
 
-            // Wayland-aware Context Menu Anchor (keeps the fix that makes it open upwards)
             QsMenuAnchor {
                 id: menuAnchor
                 menu: modelData.menu
@@ -46,7 +43,6 @@ RowLayout {
                 }
             }
 
-            // Mouse interactions
             MouseArea {
                 id: mouseArea
                 anchors.fill: parent
@@ -65,7 +61,6 @@ RowLayout {
                 }
             }
 
-            // Tooltip
             ToolTip {
                 visible: mouseArea.containsMouse && (modelData.tooltipTitle !== "" || modelData.title !== "")
                 delay: 300
