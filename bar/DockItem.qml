@@ -21,7 +21,6 @@ Rectangle {
         radius: Theme.radiusSmall
         color: (toplevel && toplevel.activated) ? Theme.accentDim : Theme.bgElevated
 
-        // Grab real system icon based on Wayland appId
         IconImage {
             id: appIcon
             anchors.fill: parent
@@ -30,7 +29,6 @@ Rectangle {
             visible: backer.status === Image.Ready
         }
 
-        // Fallback letter if icon theme doesn't have it
         Text {
             anchors.centerIn: parent
             visible: appIcon.backer.status !== Image.Ready
