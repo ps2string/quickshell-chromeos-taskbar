@@ -4,7 +4,6 @@ import QtQuick.Layouts
 import ".."
 import "../services"
 
-// Floating context menu popup for shelf dock items
 PopupWindow {
     id: menuRoot
 
@@ -30,7 +29,6 @@ PopupWindow {
             anchors.margins: 6
             spacing: 2
 
-            // Header title
             Text {
                 text: itemData ? itemData.displayName : ""
                 color: ColorService.textSecondary
@@ -47,7 +45,6 @@ PopupWindow {
 
             Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.08) }
 
-            // "New window"
             Rectangle {
                 Layout.fillWidth: true
                 height: 30
@@ -71,7 +68,6 @@ PopupWindow {
                 }
             }
 
-            // "Pin to shelf" / "Unpin from shelf"
             Rectangle {
                 Layout.fillWidth: true
                 height: 30
@@ -98,7 +94,6 @@ PopupWindow {
                 }
             }
 
-            // "Close"
             Rectangle {
                 Layout.fillWidth: true
                 height: 30
