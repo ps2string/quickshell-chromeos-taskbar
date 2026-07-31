@@ -1,3 +1,6 @@
+//@ pragma UseQApplication
+//@ pragma IconTheme Papirus
+
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
@@ -10,6 +13,10 @@ import "services"
 Scope {
     id: root
 
+    Component.onCompleted: {
+        let _ = NotificationService;
+    }
+
     Variants {
         model: Quickshell.screens
         delegate: Component {
@@ -19,7 +26,10 @@ Scope {
                 required property var modelData
                 property var currentScreen: modelData
 
-                // IPC handler for start menu / launcher toggle
+                NotificationPopup {
+                    screen: screenScope.currentScreen
+                }
+
                 IpcHandler {
                     target: "launcher"
 
@@ -27,7 +37,7 @@ Scope {
                         let focusedName = (Hyprland.focusedMonitor && Hyprland.focusedMonitor.name) ? Hyprland.focusedMonitor.name : "";
                         if (focusedName === "" || currentScreen.name === focusedName || Quickshell.screens.length === 1) {
                             appLauncher.visible = !appLauncher.visible;
-                            if (appLauncher.visible) quickSettings.visible = false;
+                            if (appLauncher.visible) quickSettings.isOpen = false;
                         } else {
                             appLauncher.visible = false;
                         }
@@ -37,7 +47,7 @@ Scope {
                         let focusedName = (Hyprland.focusedMonitor && Hyprland.focusedMonitor.name) ? Hyprland.focusedMonitor.name : "";
                         if (focusedName === "" || currentScreen.name === focusedName || Quickshell.screens.length === 1) {
                             appLauncher.visible = true;
-                            quickSettings.visible = false;
+                            quickSettings.isOpen = false;
                         } else {
                             appLauncher.visible = false;
                         }
@@ -48,7 +58,6 @@ Scope {
                     }
                 }
 
-                // Hyprland GlobalShortcut support
                 GlobalShortcut {
                     name: "launcher"
                     description: "Toggle Start Menu"
@@ -56,7 +65,7 @@ Scope {
                         let focusedName = (Hyprland.focusedMonitor && Hyprland.focusedMonitor.name) ? Hyprland.focusedMonitor.name : "";
                         if (focusedName === "" || currentScreen.name === focusedName || Quickshell.screens.length === 1) {
                             appLauncher.visible = !appLauncher.visible;
-                            if (appLauncher.visible) quickSettings.visible = false;
+                            if (appLauncher.visible) quickSettings.isOpen = false;
                         } else {
                             appLauncher.visible = false;
                         }
@@ -69,12 +78,12 @@ Scope {
 
                     onToggleLauncher: {
                         appLauncher.visible = !appLauncher.visible;
-                        if (appLauncher.visible) quickSettings.visible = false;
+                        if (appLauncher.visible) quickSettings.isOpen = false;
                     }
 
                     onToggleQuickSettings: {
-                        quickSettings.visible = !quickSettings.visible;
-                        if (quickSettings.visible) appLauncher.visible = false;
+                        quickSettings.isOpen = !quickSettings.isOpen;
+                        if (quickSettings.isOpen) appLauncher.visible = false;
                     }
 
                     onRequestShelfContextMenu: (itemData, posX) => {
@@ -85,7 +94,6 @@ Scope {
                     }
                 }
 
-                // OSD popup — centered at bottom, above shelf
                 Connections {
                     target: SystemService
                     function onShowOsd(icon, title, val, muted) {
