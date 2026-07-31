@@ -1,5 +1,5 @@
 # MaterialUI Simple Taskbar (Quickshell)
-A simple quickshell configuration that aims to target Android 16 UI like appearance.
+A simple quickshell configuration that aims Android 16 UI like appearance.
 
 > [!NOTE]
 > Strictly speaking, this is a hyprland's only quickshell configuration (for now) so, do not expect it to work outside the environment, you may try, but I won't guarantee a fully functional bar.
