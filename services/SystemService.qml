@@ -1,5 +1,6 @@
 import Quickshell
 import Quickshell.Io
+import Quickshell.Bluetooth
 import Quickshell.Services.Pipewire as Pw
 import QtQuick
 
@@ -8,13 +9,19 @@ pragma Singleton
 Item {
     id: root
 
+
     property int    brightness:    70
     property int    batteryLevel:  100
     property bool   isCharging:    false
+    property string batteryTime:   ""
     property string wifiSsid:      "Disconnected"
     property bool   wifiConnected: false  
     property bool   wifiEnabled:   false  
-    property bool   bluetoothOn:   true
+    
+    readonly property bool bluetoothOn: Bluetooth.defaultAdapter ? Bluetooth.defaultAdapter.enabled : false
+    readonly property bool isScanningBt: Bluetooth.defaultAdapter ? Bluetooth.defaultAdapter.discovering : false
+    readonly property var  bluetoothDevices: Bluetooth.defaultAdapter ? Bluetooth.defaultAdapter.devices : null
+    
     property bool   dndActive:     false
     property bool   nightLightOn:  false
 
@@ -26,9 +33,6 @@ Item {
     property var  wifiNetworks:      []
     property bool isScanningWifi:    false
     property bool isConnectingWifi:  false
-
-    property var  bluetoothDevices: []
-    property bool isScanningBt:     false
 
     Pw.PwObjectTracker {
         id: pwTracker
@@ -151,19 +155,21 @@ Item {
 
     Process {
         id: brightGet
-        command: ["cat", "/sys/class/backlight/intel_backlight/actual_brightness"]
+        command: ["brightnessctl", "-m"]
         stdout: StdioCollector {
             onStreamFinished: {
-                let raw = parseInt(this.text.trim());
-                if (!isNaN(raw) && root._maxBrightness > 0) {
-                    let pct = Math.round((raw / root._maxBrightness) * 100);
-                    let changed = pct !== root._lastBrightness;
-                    root.brightness = pct;
-                    if (root._lastBrightness >= 0 && changed) {
-                        let icon = pct > 60 ? "󰃠" : (pct > 30 ? "󰃟" : "󰃞");
-                        root.showOsd(icon, "Brightness", pct, false);
+                let parts = this.text.trim().split(",");
+                if (parts.length >= 4) {
+                    let pct = parseInt(parts[3].replace("%", ""));
+                    if (!isNaN(pct)) {
+                        let changed = pct !== root._lastBrightness;
+                        root.brightness = pct;
+                        if (root._lastBrightness >= 0 && changed) {
+                            let icon = pct > 60 ? "󰃠" : (pct > 30 ? "󰃟" : "󰃞");
+                            root.showOsd(icon, "Brightness", pct, false);
+                        }
+                        root._lastBrightness = pct;
                     }
-                    root._lastBrightness = pct;
                 }
             }
         }
@@ -195,6 +201,30 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 root.isCharging = (this.text.trim() === "Charging");
+            }
+        }
+    }
+
+    Process {
+        id: batTimeGet
+        command: ["bash", "-c",
+            "if command -v upower >/dev/null 2>&1; then " +
+                "t=$(upower -i $(upower -e | grep -i 'BAT' | head -n1) 2>/dev/null | grep -E 'time to (empty|full)' | awk -F':' '{print $2}' | xargs); " +
+                "if [ -n \"$t\" ]; then echo \"$t\"; exit 0; fi; " +
+            "fi; " +
+            "if command -v acpi >/dev/null 2>&1; then " +
+                "t=$(acpi -b 2>/dev/null | grep -oP '\\d{2}:\\d{2}' | head -n1); " +
+                "if [ -n \"$t\" ]; then " +
+                    "h=$(echo $t | cut -d: -f1 | sed 's/^0//'); " +
+                    "m=$(echo $t | cut -d: -f2 | sed 's/^0//'); " +
+                    "if [ \"$h\" != \"0\" ] && [ -n \"$h\" ]; then echo \"${h}h ${m}m\"; else echo \"${m}m\"; fi; " +
+                "fi; " +
+            "fi"
+        ]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.batteryTime = this.text.trim();
             }
         }
     }
@@ -311,57 +341,10 @@ Item {
         }
     }
 
-    Process {
-        id: btCheck
-        command: ["bash", "-c", "rfkill list bluetooth | grep -q 'Soft blocked: no' && echo 'on' || echo 'off'"]
-        running: true
-        stdout: StdioCollector {
-            onStreamFinished: { root.bluetoothOn = this.text.trim() === "on"; }
-        }
-    }
-
-    Process {
-        id: btScanProc
-        command: ["bash", "-c", "bluetoothctl devices | while read -r line; do mac=$(echo \"$line\" | awk '{print $2}'); name=$(echo \"$line\" | cut -d' ' -f3-); info=$(bluetoothctl info \"$mac\" 2>/dev/null); conn=$(echo \"$info\" | grep -q 'Connected: yes' && echo 'true' || echo 'false'); echo \"$mac|$name|$conn\"; done"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let lines = this.text.trim().split("\n");
-                let list = [];
-                for (let line of lines) {
-                    let parts = line.split("|");
-                    if (parts.length >= 3) {
-                        let mac = parts[0].trim();
-                        let name = parts[1].trim();
-                        let conn = parts[2].trim() === "true";
-                        if (mac.length > 0 && name.length > 0) {
-                            list.push({ mac: mac, name: name, connected: conn });
-                        }
-                    }
-                }
-                list.sort((a, b) => (b.connected ? 1 : 0) - (a.connected ? 1 : 0));
-                root.bluetoothDevices = list;
-                root.isScanningBt = false;
-            }
-        }
-    }
-
     Process { id: setBrightProc }
     Process { id: setWifiProc }
-    Process { id: setBtProc }
     Process { id: setNightLightProc }
 
-    Process {
-        id: dndGetProc
-        command: ["swaync-client", "--get-dnd"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let val = this.text.trim().toLowerCase();
-                root.dndActive = (val === "true");
-            }
-        }
-    }
-
-    // Night Light state reader
     Process {
         id: nightLightGetProc
         command: ["bash", "-c", "pgrep -x hyprsunset >/dev/null && echo 'on' || echo 'off'"]
@@ -380,16 +363,14 @@ Item {
     }
 
     Component.onCompleted: {
-        dndGetProc.running = true;
         nightLightGetProc.running = true;
     }
 
     function refresh() {
         batGet.running            = true;
         batStatus.running         = true;
+        batTimeGet.running        = true;
         wifiGet.running           = true;
-        btCheck.running           = true;
-        dndGetProc.running        = true;
         nightLightGetProc.running = true;
     }
 
@@ -435,48 +416,22 @@ Item {
     }
 
     function toggleBluetooth() {
-        let action = root.bluetoothOn ? "block" : "unblock";
-        setBtProc.command = ["rfkill", action, "bluetooth"];
-        setBtProc.running = true;
-        root.bluetoothOn = !root.bluetoothOn;
+        if (Bluetooth.defaultAdapter) {
+            Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled;
+        }
     }
 
     function scanBluetooth() {
-        if (!root.bluetoothOn) {
-            setBtProc.command = ["rfkill", "unblock", "bluetooth"];
-            setBtProc.running = true;
-            root.bluetoothOn = true;
+        if (Bluetooth.defaultAdapter) {
+            if (!Bluetooth.defaultAdapter.enabled) {
+                Bluetooth.defaultAdapter.enabled = true;
+            }
+            Bluetooth.defaultAdapter.discovering = true;
         }
-        root.isScanningBt = true;
-        btScanProc.running = true;
-    }
-
-    function connectBt(mac) {
-        let p = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
-        p.command = ["bluetoothctl", "connect", mac];
-        p.running = true;
-        let timer = Qt.createQmlObject('import QtQuick; Timer { interval: 2000; repeat: false }', root);
-        timer.triggered.connect(() => { root.scanBluetooth(); });
-        timer.start();
-    }
-
-    function disconnectBt(mac) {
-        let p = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
-        p.command = ["bluetoothctl", "disconnect", mac];
-        p.running = true;
-        let timer = Qt.createQmlObject('import QtQuick; Timer { interval: 1500; repeat: false }', root);
-        timer.triggered.connect(() => { root.scanBluetooth(); });
-        timer.start();
     }
 
     function toggleDnd() {
         root.dndActive = !root.dndActive;
-        let swayncProc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
-        swayncProc.command = ["swaync-client", "--toggle-dnd"];
-        swayncProc.running = true;
-        let t = Qt.createQmlObject('import QtQuick; Timer { interval: 600; repeat: false }', root);
-        t.triggered.connect(() => { dndGetProc.running = true; });
-        t.start();
     }
 
     function toggleNightLight() {
@@ -509,5 +464,9 @@ Item {
     function lockScreen() {
         let p = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
         p.command = ["hyprlock"]; p.running = true;
+    }
+
+    function logout() {
+        Quickshell.execDetached(["hyprshutdown"]);
     }
 }
