@@ -1,5 +1,5 @@
-# ChromeOS Taskbar (Quickshell)
-A simple quickshell configuration that looks like chromeOS panel.
+# MaterialUI Simple Taskbar (Quickshell)
+A simple quickshell configuration that aims to target Android 16 UI like appearance.
 
 > [!NOTE]
 > Strictly speaking, this is a hyprland's only quickshell configuration (for now) so, do not expect it to work outside the environment, you may try, but I won't guarantee a fully functional bar.
@@ -14,11 +14,10 @@ A simple quickshell configuration that looks like chromeOS panel.
 5. Bluetooth daemon (optional)
 6. Matugen (optional)
 7. Papirus icon theme
-8. SwayNC (for notifications)
 
 ## What you need to do to get this shell working?
-1. First, go to the prefered directory to clone this repository (i.e Downloads).
-2. Then run `git clone https://github.com/ps2string/quickshell-chromeos-taskbar`
+1. First, go to the preferred directory to clone this repository (i.e Downloads).
+2. Then run `git clone https://github.com/ps2string/quickshell-materialui`
 3. After that, create a new folder inside `~/.config` named `quickshell`
 4. Move the contents inside the cloned directory inside the new folder
 5. Run quickshell (either with `qs` or just `quickshell`)
@@ -48,7 +47,7 @@ A simple quickshell configuration that looks like chromeOS panel.
 # Any configuration you want to put here
 
 [templates.quickshell]
-input_path = "~/.config/matugen/templates/qschromeos-bar.json"
+input_path = "~/.config/matugen/templates/materialui_bar.json"
 output_path = "~/.config/quickshell/colors.json"
 
 ```
@@ -74,11 +73,8 @@ target launcher
 
 ## Previews
 ---
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/225a077c-d38f-4365-b082-7c09d428db9e" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/b1596bf1-634c-46c5-bccc-6f746777a4c5" />
 
 ---
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/56917015-2a6a-4640-a5af-495b1fe8617b" />
 
-### When wallpaper changed:
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/78652dbb-18ad-40f9-8dc2-5ca4a15ad933" />
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/9fbbb5da-3e96-45d1-839c-a51905210403" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/bc1d1b02-41d4-41fa-b625-d1a633e1fba0" />
