@@ -14,6 +14,7 @@ A simple quickshell configuration that aims Android 16 UI like appearance.
 5. Bluetooth daemon (optional)
 6. Matugen (optional)
 7. Papirus icon theme
+8.~~Any notification daemon (swaync, dunst, mako, etc)~~
 
 ## What you need to do to get this shell working?
 1. First, go to the preferred directory to clone this repository (i.e Downloads).
