@@ -7,12 +7,11 @@ import QtQuick.Controls
 import ".."
 import "../services"
 
-
 PopupWindow {
     id: launcherRoot
 
     implicitWidth:  540
-    implicitHeight: 620
+    implicitHeight: 650
     visible: false
     color: "transparent"
     grabFocus: true
@@ -29,7 +28,6 @@ PopupWindow {
             p.running = true;
         }
     }
-
     function getFilteredApps() {
         let all = [];
         if (typeof DesktopEntries !== "undefined" && DesktopEntries.applications && DesktopEntries.applications.values) {
@@ -38,6 +36,9 @@ PopupWindow {
                 if (vals[i]) all.push(vals[i]);
             }
         }
+
+        all.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
         let q = searchInput.text.toLowerCase().trim();
         if (!q) return all;
 
@@ -78,7 +79,7 @@ PopupWindow {
 
     Timer {
         id: closeTimer
-        interval: 250
+        interval: 220
         repeat: false
         onTriggered: {
             visible = false;
@@ -99,49 +100,36 @@ PopupWindow {
     Rectangle {
         id: launcherContainer
         anchors.fill: parent
-        color: Qt.alpha(ColorService.bgBase, 0.96)
-        radius: Theme.radiusLarge
-        border.color: Qt.rgba(1, 1, 1, 0.1)
+        color: Qt.rgba(ColorService.bgBase.r, ColorService.bgBase.g, ColorService.bgBase.b, 0.94)
+        radius: 28
+        border.color: Qt.alpha(ColorService.accent, 0.2)
         border.width: 1
 
-        layer.enabled: true
-        layer.effect: null
-
+        scale: launcherRoot.isOpen ? 1.0 : 0.94
         opacity: launcherRoot.isOpen ? 1.0 : 0.0
         transform: Translate {
-            y: launcherRoot.isOpen ? 0 : 40
-            Behavior on y {
-                NumberAnimation {
-                    duration: 250
-                    easing.type: Easing.OutCubic
-                }
-            }
+            y: launcherRoot.isOpen ? 0 : 30
+            Behavior on y { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
         }
 
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 220
-                easing.type: Easing.OutCubic
-            }
-        }
-
-        Behavior on color { ColorAnimation { duration: 400 } }
+        Behavior on scale   { NumberAnimation { duration: 250; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
+        Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+        Behavior on color   { ColorAnimation  { duration: 400 } }
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 20
-            spacing: 14
+            anchors.margins: 18
+            spacing: 12
 
             Rectangle {
                 Layout.fillWidth: true
-                height: 48
-                radius: Theme.radiusPill
-                color: ColorService.bgSurface
-                border.color: searchInput.activeFocus ? ColorService.accent : Qt.rgba(1,1,1,0.08)
-                border.width: 2
+                height: 50
+                radius: 25
+                color: ColorService.bgElevated
+                border.color: searchInput.activeFocus ? ColorService.accent : Qt.alpha(ColorService.accent, 0.15)
+                border.width: searchInput.activeFocus ? 2 : 1
 
-                Behavior on color        { ColorAnimation { duration: 400 } }
-                Behavior on border.color { ColorAnimation { duration: 150 } }
+                Behavior on border.color { ColorAnimation { duration: 180 } }
 
                 RowLayout {
                     anchors.fill: parent
@@ -150,9 +138,9 @@ PopupWindow {
                     spacing: 12
 
                     Text {
-                        text: ""
+                        text: "󰍉"
                         font.family: Theme.fontIcon
-                        font.pixelSize: 16
+                        font.pixelSize: 18
                         color: searchInput.activeFocus ? ColorService.accent : ColorService.textSecondary
                         Behavior on color { ColorAnimation { duration: 150 } }
                     }
@@ -161,134 +149,136 @@ PopupWindow {
                         id: searchInput
                         Layout.fillWidth: true
                         placeholderText: "Search apps…"
-                        placeholderTextColor: ColorService.textSecondary
+                        placeholderTextColor: Qt.alpha(ColorService.textSecondary, 0.7)
                         color: ColorService.textPrimary
                         font.family: Theme.fontMain
                         font.pixelSize: 15
+                        font.bold: true
                         background: null
+
                         Keys.onEscapePressed: launcherRoot.close()
                         Keys.onReturnPressed: launcherRoot.launchFirstResult()
-                        Keys.onEnterPressed: launcherRoot.launchFirstResult()
+                        Keys.onEnterPressed:  launcherRoot.launchFirstResult()
                     }
 
                     Rectangle {
                         width: 24; height: 24; radius: 12
-                        color: clearArea.containsMouse ? ColorService.bgHover : "transparent"
+                        color: clearArea.containsMouse ? Qt.alpha(ColorService.accent, 0.2) : Qt.alpha(ColorService.accent, 0.1)
                         visible: searchInput.text.length > 0
+                        scale: clearArea.containsMouse ? 1.1 : 1.0
+
+                        Behavior on scale { NumberAnimation { duration: 150 } }
+
                         Text {
                             anchors.centerIn: parent
-                            text: ""
+                            text: "󰅖"
                             font.family: Theme.fontIcon
                             font.pixelSize: 12
-                            color: ColorService.textSecondary
+                            color: ColorService.accent
                         }
+
                         MouseArea {
                             id: clearArea
                             anchors.fill: parent
                             hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: searchInput.text = ""
                         }
                     }
                 }
             }
 
-            Text {
-                visible: searchInput.text.length === 0
-                text: "Pinned"
-                color: ColorService.textSecondary
-                font.family: Theme.fontMain
-                font.pixelSize: 11
-                font.bold: true
-                font.letterSpacing: 0.8
-                leftPadding: 4
-            }
+            ColumnLayout {
+                visible: searchInput.text.length === 0 && PinsService.pins.length > 0
+                Layout.fillWidth: true
+                spacing: 8
 
-            Row {
-                visible: searchInput.text.length === 0
-                spacing: 6
-                Repeater {
-                    model: PinsService.pins.slice(0, 6)
-                    delegate: Item {
-                        width: 72; height: 72
-                        Rectangle {
-                            anchors.fill: parent
-                            anchors.margins: 2
-                            radius: Theme.radiusMedium
-                            color: pinnedArea.containsMouse ? ColorService.bgHover : "transparent"
-                            Behavior on color { ColorAnimation { duration: 120 } }
+                Text {
+                    text: "Favorites"
+                    color: ColorService.accent
+                    font.family: Theme.fontMain
+                    font.pixelSize: 12
+                    font.bold: true
+                    font.letterSpacing: 0.6
+                    leftPadding: 4
+                }
 
-                            ColumnLayout {
-                                anchors.centerIn: parent
-                                spacing: 6
+                ListView {
+                    id: pinsList
+                    Layout.fillWidth: true
+                    implicitHeight: 42
+                    orientation: ListView.Horizontal
+                    spacing: 8
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
 
-                                Rectangle {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    width: 36; height: 36; radius: 10
-                                    color: "transparent"
+                    model: PinsService.pins
 
-                                    IconImage {
-                                        id: pinnedIcon
-                                        anchors.fill: parent
-                                        source: modelData.icon ? Quickshell.iconPath(modelData.icon, true) : ""
-                                        visible: status === Image.Ready
-                                    }
-                                    Rectangle {
-                                        anchors.fill: parent; radius: 10
-                                        color: ColorService.accentDim
-                                        visible: pinnedIcon.status !== Image.Ready
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: modelData.name ? modelData.name[0].toUpperCase() : "?"
-                                            color: ColorService.accent; font.bold: true; font.pixelSize: 16
-                                        }
-                                    }
-                                }
+                    delegate: Rectangle {
+                        width: 92; height: 42
+                        radius: 21
+                        color: pinnedArea.containsMouse ? Qt.alpha(ColorService.accent, 0.22) : Qt.alpha(ColorService.accent, 0.1)
+                        border.color: pinnedArea.containsMouse ? ColorService.accent : "transparent"
+                        border.width: 1
+                        scale: pinnedArea.containsMouse ? 1.03 : 1.0
 
-                                Text {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    Layout.maximumWidth: 68
-                                    text: modelData.name || "App"
-                                    color: ColorService.textPrimary
-                                    font.family: Theme.fontMain
-                                    font.pixelSize: 11
-                                    elide: Text.ElideRight
-                                    horizontalAlignment: Text.AlignHCenter
-                                }
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                        Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutBack } }
+
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            IconImage {
+                                width: 22; height: 22
+                                source: modelData.icon ? Quickshell.iconPath(modelData.icon, true) : ""
+                                visible: status === Image.Ready
+                                smooth: true
                             }
 
-                            MouseArea {
-                                id: pinnedArea
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (modelData.exec) {
-                                        let p = Qt.createQmlObject('import Quickshell.Io; Process {}', launcherRoot);
-                                        p.command = ["sh", "-c", modelData.exec]; p.running = true;
-                                    }
-                                    launcherRoot.close();
+                            Text {
+                                text: modelData.name || "App"
+                                color: ColorService.textPrimary
+                                font.family: Theme.fontMain
+                                font.pixelSize: 11
+                                font.bold: true
+                                elide: Text.ElideRight
+                                Layout.maximumWidth: 50
+                            }
+                        }
+
+                        MouseArea {
+                            id: pinnedArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (modelData.exec) {
+                                    let p = Qt.createQmlObject('import Quickshell.Io; Process {}', launcherRoot);
+                                    p.command = ["sh", "-c", modelData.exec]; p.running = true;
                                 }
+                                launcherRoot.close();
                             }
                         }
                     }
                 }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: Qt.alpha(ColorService.accent, 0.12)
+                    Layout.topMargin: 2
+                }
             }
 
-            Rectangle {
-                visible: searchInput.text.length === 0
-                Layout.fillWidth: true
-                height: 1
-                color: Qt.rgba(1, 1, 1, 0.07)
-            }
             Text {
-                text: searchInput.text.length === 0 ? "All apps" : ("Results for \"" + searchInput.text + "\"")
+                text: searchInput.text.length === 0 ? "All Applications" : ("Results for \"" + searchInput.text + "\"")
                 color: ColorService.textSecondary
                 font.family: Theme.fontMain
-                font.pixelSize: 11
+                font.pixelSize: 12
                 font.bold: true
-                font.letterSpacing: 0.8
+                font.letterSpacing: 0.6
                 leftPadding: 4
-                Behavior on color { ColorAnimation { duration: 400 } }
             }
 
             Item {
@@ -296,132 +286,58 @@ PopupWindow {
                 Layout.fillHeight: true
                 clip: true
 
-                GridView {
-                    id: appGrid
-                    anchors.fill: parent
-                    visible: searchInput.text.length === 0
-                    cellWidth: 100
-                    cellHeight: 110
-
-                    model: searchInput.text.length === 0 ? launcherRoot.getFilteredApps() : []
-
-                    delegate: Item {
-                        width: appGrid.cellWidth
-                        height: appGrid.cellHeight
-
-                        Rectangle {
-                            anchors.fill: parent
-                            anchors.margins: 4
-                            radius: Theme.radiusMedium
-                            color: gridItemArea.containsMouse ? ColorService.bgHover : "transparent"
-                            Behavior on color { ColorAnimation { duration: 120 } }
-
-                            ColumnLayout {
-                                anchors.centerIn: parent
-                                spacing: 8
-
-                                Rectangle {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    width: 52; height: 52
-                                    radius: 14
-                                    color: "transparent"
-
-                                    IconImage {
-                                        id: gridIcon
-                                        anchors.fill: parent
-                                        source: modelData.icon ? Quickshell.iconPath(modelData.icon, true) : ""
-                                        visible: status === Image.Ready
-                                        smooth: true
-                                    }
-                                    Rectangle {
-                                        anchors.fill: parent; radius: 14
-                                        color: ColorService.accentDim
-                                        visible: gridIcon.status !== Image.Ready
-                                        Behavior on color { ColorAnimation { duration: 400 } }
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: modelData.name ? modelData.name[0].toUpperCase() : "A"
-                                            color: ColorService.accent
-                                            font.family: Theme.fontMain
-                                            font.pixelSize: 22
-                                            font.bold: true
-                                        }
-                                    }
-                                }
-
-                                Text {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    Layout.maximumWidth: 88
-                                    text: modelData.name || "App"
-                                    color: ColorService.textPrimary
-                                    font.family: Theme.fontMain
-                                    font.pixelSize: 12
-                                    elide: Text.ElideRight
-                                    horizontalAlignment: Text.AlignHCenter
-                                    Behavior on color { ColorAnimation { duration: 400 } }
-                                }
-                            }
-
-                            MouseArea {
-                                id: gridItemArea
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                onClicked: (mouse) => {
-                                    if (mouse.button === Qt.RightButton) {
-                                        appCtxMenu.appData = modelData;
-                                        appCtxMenu.popup();
-                                        return;
-                                    }
-                                    launcherRoot.launchApp(modelData);
-                                    launcherRoot.close();
-                                }
-                            }
-                        }
-                    }
-                }
-
                 ListView {
                     id: appList
                     anchors.fill: parent
-                    visible: searchInput.text.length > 0
-                    spacing: 4
+                    anchors.bottomMargin: 10
+                    spacing: 6
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
 
-                    model: searchInput.text.length > 0 ? launcherRoot.getFilteredApps() : []
+                    model: launcherRoot.getFilteredApps()
 
                     delegate: Item {
                         width: appList.width
-                        height: 52
+                        height: 56
 
                         Rectangle {
+                            id: tileBg
                             anchors.fill: parent
-                            anchors.margins: 2
-                            radius: Theme.radiusMedium
-                            color: listItemArea.containsMouse ? ColorService.bgHover : "transparent"
-                            Behavior on color { ColorAnimation { duration: 120 } }
+                            radius: 16
+                            color: listItemArea.containsMouse ? Qt.alpha(ColorService.accent, 0.15) : "transparent"
+                            border.color: listItemArea.containsMouse ? Qt.alpha(ColorService.accent, 0.3) : "transparent"
+                            border.width: 1
+
+                            scale: listItemArea.containsMouse ? 1.01 : 1.0
+
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutBack } }
 
                             RowLayout {
                                 anchors.fill: parent
                                 anchors.leftMargin: 12
-                                anchors.rightMargin: 12
+                                anchors.rightMargin: 16
                                 spacing: 14
 
                                 Rectangle {
-                                    width: 36; height: 36
-                                    radius: 10
-                                    color: "transparent"
+                                    width: 40; height: 40
+                                    radius: 13
+                                    color: Qt.alpha(ColorService.accent, 0.12)
+                                    border.color: Qt.alpha(ColorService.accent, 0.2)
+                                    border.width: 1
                                     Layout.alignment: Qt.AlignVCenter
 
                                     IconImage {
                                         id: listIcon
-                                        anchors.fill: parent
+                                        anchors.centerIn: parent
+                                        width: 24; height: 24
                                         source: modelData.icon ? Quickshell.iconPath(modelData.icon, true) : ""
                                         visible: status === Image.Ready
                                         smooth: true
                                     }
+
                                     Rectangle {
-                                        anchors.fill: parent; radius: 10
+                                        anchors.fill: parent; radius: 13
                                         color: ColorService.accentDim
                                         visible: listIcon.status !== Image.Ready
                                         Text {
@@ -429,7 +345,7 @@ PopupWindow {
                                             text: modelData.name ? modelData.name[0].toUpperCase() : "A"
                                             color: ColorService.accent
                                             font.family: Theme.fontMain
-                                            font.pixelSize: 16
+                                            font.pixelSize: 15
                                             font.bold: true
                                         }
                                     }
@@ -459,6 +375,15 @@ PopupWindow {
                                         visible: text.length > 0
                                         Layout.fillWidth: true
                                     }
+                                }
+
+                                Text {
+                                    text: "󰅂"
+                                    font.family: Theme.fontIcon
+                                    font.pixelSize: 16
+                                    color: listItemArea.containsMouse ? ColorService.accent : "transparent"
+                                    Layout.alignment: Qt.AlignVCenter
+                                    Behavior on color { ColorAnimation { duration: 150 } }
                                 }
                             }
 
@@ -492,8 +417,8 @@ PopupWindow {
         background: Rectangle {
             implicitWidth: 180
             color: ColorService.bgElevated
-            radius: 12
-            border.color: Qt.rgba(1,1,1,0.12)
+            radius: 16
+            border.color: Qt.alpha(ColorService.accent, 0.2)
             border.width: 1
         }
 
@@ -504,13 +429,13 @@ PopupWindow {
                 color: ColorService.textPrimary
                 font.family: Theme.fontMain; font.pixelSize: 13; leftPadding: 12
             }
-            background: Rectangle { color: parent.hovered ? ColorService.bgHover : "transparent"; radius: 8 }
+            background: Rectangle { color: parent.hovered ? Qt.alpha(ColorService.accent, 0.15) : "transparent"; radius: 10 }
             onTriggered: {
                 launcherRoot.launchApp(appCtxMenu.appData);
                 launcherRoot.close();
             }
         }
-        MenuSeparator { contentItem: Rectangle { height: 1; color: Qt.rgba(1,1,1,0.1) } }
+        MenuSeparator { contentItem: Rectangle { height: 1; color: Qt.rgba(1,1,1,0.08) } }
         MenuItem {
             text: {
                 let d = appCtxMenu.appData;
@@ -523,7 +448,7 @@ PopupWindow {
                 color: ColorService.textPrimary
                 font.family: Theme.fontMain; font.pixelSize: 13; leftPadding: 12
             }
-            background: Rectangle { color: parent.hovered ? ColorService.bgHover : "transparent"; radius: 8 }
+            background: Rectangle { color: parent.hovered ? Qt.alpha(ColorService.accent, 0.15) : "transparent"; radius: 10 }
             onTriggered: {
                 let d = appCtxMenu.appData;
                 if (!d) return;
