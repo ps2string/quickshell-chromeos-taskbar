@@ -7,17 +7,14 @@ import Quickshell.Io
 import ".."
 import "../services"
 
-
 Item {
     id: root
 
-    // pinData: { appId, name, exec, icon } or null if unpinned open window
     property var pinData: null
-    // openToplevel: ToplevelHandle or null
     property var openToplevel: null
+
     function getToplevelAppId(t) {
         if (!t) return "";
-        // Hyprland toplevels: class is in lastIpcObject
         if (t.lastIpcObject) {
             let cls = t.lastIpcObject["class"];
             if (cls && typeof cls === "string" && cls.length > 0) return cls;
@@ -50,9 +47,9 @@ Item {
         if (aid.length > 0) return aid;
         return "App";
     }
+
     property string resolvedIconPath: {
-        let rawId = (pinData && pinData.icon) ? pinData.icon
-                  : getToplevelAppId(openToplevel);
+        let rawId = (pinData && pinData.icon) ? pinData.icon : getToplevelAppId(openToplevel);
         if (!rawId || rawId.length === 0) return "";
 
         let candidates = [rawId];
@@ -73,6 +70,8 @@ Item {
         if (lower.includes("code") || lower.includes("vscodium")) candidates.push("vscode", "vscodium", "com.visualstudio.code");
         if (lower.includes("obsidian")) candidates.push("obsidian");
         if (lower.includes("haruna")) candidates.push("org.kde.haruna", "haruna");
+        if (lower.includes("easyeda")) candidates.push("easyeda", "easyeda-pro", "easyeda-pro-desktop");
+        if (lower.includes("easyeffects") || lower.includes("easy-effects")) candidates.push("easyeffects", "com.github.wwmm.easyeffects");
 
         for (let i = 0; i < candidates.length; i++) {
             let p = Quickshell.iconPath(candidates[i], true);
@@ -87,102 +86,79 @@ Item {
     Rectangle {
         id: hoverBg
         anchors.centerIn: parent
-        width: 40; height: 40; radius: 12
-        color: itemArea.containsMouse
-            ? Qt.rgba(ColorService.bgHover.r, ColorService.bgHover.g, ColorService.bgHover.b, 1.0)
-            : (isActive
-                ? Qt.rgba(ColorService.accentDim.r, ColorService.accentDim.g, ColorService.accentDim.b, 1.0)
-                : "transparent")
-        Behavior on color { ColorAnimation { duration: 150 } }
+        width: 40; height: 40; radius: 14
+        color: isActive 
+            ? Qt.alpha(ColorService.accent, 0.28) 
+            : (itemArea.containsMouse ? Qt.alpha(ColorService.accent, 0.15) : "transparent")
+
+        border.color: isActive ? ColorService.accent : "transparent"
+        border.width: isActive ? 1.5 : 0
+
+        scale: itemArea.containsMouse ? 1.12 : 1.0
+
+        Behavior on color { ColorAnimation { duration: 180 } }
+        Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
     }
 
     IconImage {
         id: appIcon
         anchors.centerIn: parent
-        width: 28; height: 28
+        width: 26; height: 26
         source: root.resolvedIconPath
         smooth: true
+        scale: itemArea.containsMouse ? 1.1 : 1.0
         visible: backer.status === Image.Ready
+        Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
     }
 
     Rectangle {
         anchors.centerIn: parent
-        width: 28; height: 28; radius: 8
+        width: 26; height: 26; radius: 8
         color: ColorService.accentDim
         visible: appIcon.backer.status !== Image.Ready
-        Behavior on color { ColorAnimation { duration: 400 } }
+        
         Text {
             anchors.centerIn: parent
             text: displayName.length > 0 ? displayName[0].toUpperCase() : "?"
             color: ColorService.accent
-            font.family: Theme.fontMain
+            font.family: ColorService.fontMain
             font.bold: true
-            font.pixelSize: 14
-            Behavior on color { ColorAnimation { duration: 400 } }
+            font.pixelSize: 13
         }
     }
 
-    Row {
+    Rectangle {
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 2
+        anchors.bottomMargin: 3
         anchors.horizontalCenter: parent.horizontalCenter
-        spacing: 3
+        width: isActive ? 16 : (isOpen ? 6 : 0)
+        height: 3; radius: 1.5
+        color: isActive ? ColorService.accent : Qt.alpha(ColorService.textSecondary, 0.6)
+        opacity: isOpen ? 1.0 : 0.0
 
-        Rectangle {
-            width: isActive ? 14 : 4
-            height: 3; radius: 2
-            color: isActive ? ColorService.accent : ColorService.textSecondary
-            opacity: isOpen ? 1.0 : 0.0
-            Behavior on width   { NumberAnimation { duration: 180 } }
-            Behavior on color   { ColorAnimation  { duration: 400 } }
-            Behavior on opacity { NumberAnimation { duration: 150 } }
-        }
+        Behavior on width   { NumberAnimation { duration: 220; easing.type: Easing.OutBack } }
+        Behavior on color   { ColorAnimation  { duration: 180 } }
+        Behavior on opacity { NumberAnimation { duration: 150 } }
     }
 
     ToolTip {
         id: tooltip
         text: displayName
         visible: itemArea.containsMouse && displayName.length > 0
-        delay: 600
+        delay: 400
         background: Rectangle {
             color: ColorService.bgElevated
-            radius: 6
-            border.color: Qt.rgba(1,1,1,0.1)
+            radius: 8
+            border.color: Qt.alpha(ColorService.accent, 0.2)
             border.width: 1
         }
         contentItem: Text {
             text: tooltip.text
             color: ColorService.textPrimary
-            font.family: Theme.fontMain
-            font.pixelSize: 12
+            font.family: ColorService.fontMain
+            font.pixelSize: 11
+            font.bold: true
         }
-    }
-
-    function launchNew() {
-        let cmd = (pinData && pinData.exec) ? pinData.exec
-                 : (openToplevel ? openToplevel.appId : "");
-        if (cmd.length > 0) {
-            let p = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
-            p.command = ["sh", "-c", cmd];
-            p.running = true;
-        }
-    }
-
-    function togglePin() {
-        if (isPinned && pinData) {
-            PinsService.unpin(pinData.appId);
-        } else if (openToplevel) {
-            PinsService.pin(
-                openToplevel.appId,
-                openToplevel.title || openToplevel.appId,
-                openToplevel.appId,
-                openToplevel.appId
-            );
-        }
-    }
-
-    function closeWindow() {
-        if (openToplevel) openToplevel.close();
     }
 
     signal requestContextMenu(real mouseX, real mouseY)
