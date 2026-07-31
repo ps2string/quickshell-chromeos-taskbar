@@ -9,8 +9,8 @@ import "../services"
 PopupWindow {
     id: qsRoot
 
-    implicitWidth:  360
-    implicitHeight: currentView === "main" ? (mainLayout.implicitHeight + 32) : 400
+    implicitWidth: 380
+    implicitHeight: currentView === "main" ? (mainLayout.implicitHeight + 36) : 420
     
     property bool isOpen: false
     
@@ -37,36 +37,34 @@ PopupWindow {
         }
     }
 
-       Timer {
-           id: closeTimer
-           interval: 250 
-           onTriggered: qsRoot.visible = false
-       }
-   
-       onVisibleChanged: {
-           if (!qsRoot.visible && qsRoot.isOpen) {
-               qsRoot.isOpen = false;
-               closeTimer.stop();
-           }
-       }
-   
-       onIsOpenChanged: {
-           if (isOpen) {
+    Timer {
+        id: closeTimer
+        interval: 250
+        onTriggered: qsRoot.visible = false
+    }
 
-               closeTimer.stop();
-               qsRoot.visible = true;
-               
-               currentView = "main";
-               selectedWifiSsid = "";
-               wifiPasswordInput = "";
-               powerExpanded = false;
-               SystemService.refresh();
-           } else {
-               if (qsRoot.visible) {
-                   closeTimer.restart();
-               }
-           }
-       }
+    onVisibleChanged: {
+        if (!qsRoot.visible && qsRoot.isOpen) {
+            qsRoot.isOpen = false;
+            closeTimer.stop();
+        }
+    }
+
+    onIsOpenChanged: {
+        if (isOpen) {
+            closeTimer.stop();
+            qsRoot.visible = true;
+            currentView = "main";
+            selectedWifiSsid = "";
+            wifiPasswordInput = "";
+            powerExpanded = false;
+            SystemService.refresh();
+        } else {
+            if (qsRoot.visible) {
+                closeTimer.restart();
+            }
+        }
+    }
 
     Rectangle {
         id: bgRect
@@ -78,16 +76,15 @@ PopupWindow {
         }
 
         transform: Translate {
-            y: qsRoot.isOpen ? 0 : 20
+            y: qsRoot.isOpen ? 0 : 24
             Behavior on y { 
                 NumberAnimation { duration: 250; easing.type: Easing.OutCubic } 
             }
         }
 
-
-        color: Qt.alpha(ColorService.bgBase, 0.96)
-        radius: Theme.radiusLarge
-        border.color: Qt.rgba(1, 1, 1, 0.1)
+        color: Qt.alpha(ColorService.bgBase, 0.95)
+        radius: 28
+        border.color: Qt.rgba(1, 1, 1, 0.12)
         border.width: 1
         Behavior on color { ColorAnimation { duration: 400 } }
 
@@ -96,8 +93,8 @@ PopupWindow {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.margins: 16
-            spacing: 12
+            anchors.margins: 18
+            spacing: 14
             visible: qsRoot.currentView === "main"
 
             RowLayout {
@@ -105,67 +102,62 @@ PopupWindow {
                 spacing: 10
 
                 Rectangle {
-                    width: 36; height: 36; radius: 18
-                    gradient: Gradient {
-                        orientation: Gradient.Horizontal
-                        GradientStop { position: 0.0; color: ColorService.accent }
-                        GradientStop { position: 1.0; color: ColorService.success }
-                    }
-                    Behavior on gradient { ColorAnimation { duration: 400 } }
-                    Text {
+                    height: 40
+                    implicitWidth: userRow.implicitWidth + 24
+                    radius: 20
+                    color: ColorService.bgElevated
+                    border.color: Qt.rgba(1, 1, 1, 0.08)
+                    border.width: 1
+
+                    RowLayout {
+                        id: userRow
                         anchors.centerIn: parent
-                        text: ""
-                        font.family: Theme.fontIcon
-                        font.pixelSize: 16
-                        color: ColorService.bgBase
-                    }
-                }
+                        spacing: 8
 
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 2
-
-                    Text {
-                        Layout.fillWidth: true
-                        text: {
-                            let u = Quickshell.env("USER") || "User";
-                            return u.charAt(0).toUpperCase() + u.slice(1);
+                        Rectangle {
+                            width: 26; height: 26; radius: 13
+                            color: ColorService.accent
+                            Text {
+                                anchors.centerIn: parent
+                                text: ""
+                                font.family: Theme.fontIcon
+                                font.pixelSize: 13
+                                color: ColorService.bgBase
+                            }
                         }
-                        color: ColorService.textPrimary
-                        font.family: Theme.fontMain
-                        font.pixelSize: 14
-                        font.bold: true
-                        elide: Text.ElideRight
-                        Behavior on color { ColorAnimation { duration: 400 } }
-                    }
-                    Text {
-                        Layout.fillWidth: true
-                        text: SystemService.wifiConnected ? SystemService.wifiSsid : "Wi-Fi disconnected"
-                        color: ColorService.textSecondary
-                        font.family: Theme.fontMain
-                        font.pixelSize: 11
-                        elide: Text.ElideRight
-                        Behavior on color { ColorAnimation { duration: 400 } }
+
+                        Text {
+                            text: {
+                                let u = Quickshell.env("USER") || "User";
+                                return u.charAt(0).toUpperCase() + u.slice(1);
+                            }
+                            color: ColorService.textPrimary
+                            font.family: Theme.fontMain
+                            font.pixelSize: 13
+                            font.bold: true
+                        }
                     }
                 }
+
+                Item { Layout.fillWidth: true }
 
                 Rectangle {
                     id: powerMenu
-                    Layout.alignment: Qt.AlignRight 
-                    implicitWidth: qsRoot.powerExpanded ? 112 : 32 
-                    height: 32
-                    radius: 16
-                    color: qsRoot.powerExpanded ? ColorService.bgElevated : "transparent"
-                    border.color: qsRoot.powerExpanded ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
-                    border.width: qsRoot.powerExpanded ? 1 : 0
+                    implicitWidth: qsRoot.powerExpanded ? 116 : 40 
+                    height: 40
+                    radius: 20
+                    color: qsRoot.powerExpanded ? ColorService.bgElevated : Qt.alpha(ColorService.accent, 0.15)
+                    border.color: qsRoot.powerExpanded ? Qt.rgba(1, 1, 1, 0.1) : Qt.alpha(ColorService.accent, 0.3)
+                    border.width: 1
                     clip: true
 
-                    Behavior on implicitWidth { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                    Behavior on implicitWidth { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
                     Behavior on color { ColorAnimation { duration: 200 } }
 
                     RowLayout {
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
+                        anchors.rightMargin: 4
                         spacing: 4
 
                         QsIconBtn {
@@ -174,11 +166,7 @@ PopupWindow {
                             tooltip: "Log out"
                             onAct: {
                                 qsRoot.powerExpanded = false;
-                                if (typeof SystemService.logout === "function") {
-                                    SystemService.logout();
-                                } else {
-                                    SystemService.lockScreen();
-                                }
+                                SystemService.logout();
                             }
                         }
 
@@ -208,13 +196,11 @@ PopupWindow {
                 }
             }
 
-            Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.08) }
-
             GridLayout {
                 Layout.fillWidth: true
                 columns: 2
-                rowSpacing: 8
-                columnSpacing: 8
+                rowSpacing: 10
+                columnSpacing: 10
 
                 QsExpandableTile {
                     icon: SystemService.wifiEnabled ? (SystemService.wifiConnected ? "󰤨" : "󰤭") : "󰤮"
@@ -257,11 +243,9 @@ PopupWindow {
                 }
             }
 
-            Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.08) }
-
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 12
+                spacing: 10
 
                 QsSlider {
                     iconOn:  "󰕾"
@@ -285,41 +269,128 @@ PopupWindow {
                 }
             }
 
-            Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.08) }
-
-            RowLayout {
+            Rectangle {
                 Layout.fillWidth: true
-                spacing: 12
+                height: 48
+                radius: 24
+                color: ColorService.bgElevated
+                border.color: Qt.rgba(1, 1, 1, 0.06)
+                border.width: 1
 
-                Text {
-                    text: SystemService.isCharging ? "󰂄" : (SystemService.batteryLevel > 20 ? "󰁹" : "󰁻")
-                    font.family: Theme.fontIcon
-                    font.pixelSize: 20
-                    color: SystemService.batteryLevel <= 15 ? ColorService.danger : ColorService.textPrimary
-                    Behavior on color { ColorAnimation { duration: 400 } }
-                }
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 14
+                    anchors.rightMargin: 14
+                    spacing: 10
 
-                Column {
-                    spacing: 2
                     Text {
-                        text: SystemService.batteryLevel + "% — " + (SystemService.isCharging ? "Charging" : "Battery")
+                        text: SystemService.isCharging ? "󰂄" : (SystemService.batteryLevel > 20 ? "󰁹" : "󰁻")
+                        font.family: Theme.fontIcon
+                        font.pixelSize: 18
+                        color: SystemService.batteryLevel <= 15 ? ColorService.danger : ColorService.accent
+                    }
+
+                    Text {
+                        text: {
+                            let statusText = SystemService.batteryLevel + "%";
+                            let timeEstimate = SystemService.batteryTime ? SystemService.batteryTime : "";
+                            
+                            if (SystemService.isCharging) {
+                                statusText += timeEstimate ? (" • Full in " + timeEstimate) : " • Charging";
+                            } else {
+                                statusText += timeEstimate ? (" • " + timeEstimate + " left") : "";
+                            }
+                            
+                            return statusText;
+                        }
                         color: ColorService.textPrimary
                         font.family: Theme.fontMain
-                        font.pixelSize: 13
+                        font.pixelSize: 12
                         font.bold: true
-                        Behavior on color { ColorAnimation { duration: 400 } }
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
                     }
+
+                    Item { Layout.fillWidth: true }
+
                     Rectangle {
-                        width: 200; height: 5; radius: 3
-                        color: ColorService.bgElevated
+                        width: 80; height: 8; radius: 4
+                        color: Qt.rgba(1, 1, 1, 0.1)
+                        clip: true
                         Rectangle {
-                            width: Math.max(6, parent.width * (SystemService.batteryLevel / 100))
+                            width: Math.max(4, parent.width * (SystemService.batteryLevel / 100))
                             height: parent.height; radius: parent.radius
                             color: SystemService.batteryLevel <= 15 ? ColorService.danger
                                  : SystemService.isCharging ? ColorService.success
                                  : ColorService.accent
                             Behavior on width { NumberAnimation { duration: 300 } }
-                            Behavior on color { ColorAnimation { duration: 400 } }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                height: 64
+                radius: 20
+                color: ColorService.bgElevated
+                border.color: Qt.rgba(1, 1, 1, 0.06)
+                border.width: 1
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    spacing: 12
+
+                    Rectangle {
+                        width: 44; height: 44; radius: 22
+                        color: NotificationService.trackedNotifications.count > 0 ? Qt.alpha(ColorService.accent, 0.15) : Qt.rgba(1, 1, 1, 0.08)
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰎟" 
+                            font.family: Theme.fontIcon
+                            font.pixelSize: 20
+                            color: NotificationService.trackedNotifications.count > 0 ? ColorService.accent : ColorService.textPrimary
+                        }
+                    }
+
+                    Column {
+                        Layout.fillWidth: true
+                        spacing: 2
+                        Text {
+                            text: "Notification History"
+                            color: ColorService.textPrimary
+                            font.family: Theme.fontMain
+                            font.bold: true
+                            font.pixelSize: 13
+                        }
+                        Text {
+                            text: NotificationService.trackedNotifications.count > 0 
+                                  ? NotificationService.trackedNotifications.count + " active notifications"
+                                  : "No new notifications"
+                            color: ColorService.textSecondary
+                            font.family: Theme.fontMain
+                            font.pixelSize: 11
+                        }
+                    }
+
+                    Rectangle {
+                        width: 32; height: 44; radius: 16
+                        color: nhArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+                        Text {
+                            anchors.centerIn: parent
+                            text: "❯"
+                            font.family: Theme.fontMain
+                            font.pixelSize: 11
+                            font.bold: true
+                            color: ColorService.textSecondary
+                        }
+                        MouseArea {
+                            id: nhArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: qsRoot.currentView = "notifications"
                         }
                     }
                 }
@@ -328,8 +399,8 @@ PopupWindow {
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 16
-            spacing: 10
+            anchors.margins: 18
+            spacing: 12
             visible: qsRoot.currentView === "wifi"
 
             RowLayout {
@@ -343,7 +414,7 @@ PopupWindow {
                 }
 
                 Text {
-                    text: "Wi-Fi Networks"
+                    text: "Internet"
                     color: ColorService.textPrimary
                     font.family: Theme.fontMain
                     font.pixelSize: 16
@@ -358,13 +429,13 @@ PopupWindow {
                 }
 
                 Rectangle {
-                    width: 44; height: 24; radius: 12
+                    width: 48; height: 26; radius: 13
                     color: SystemService.wifiEnabled ? ColorService.accent : ColorService.bgElevated
                     Behavior on color { ColorAnimation { duration: 200 } }
                     Rectangle {
-                        width: 18; height: 18; radius: 9
+                        width: 20; height: 20; radius: 10
                         anchors.verticalCenter: parent.verticalCenter
-                        x: SystemService.wifiEnabled ? 22 : 4
+                        x: SystemService.wifiEnabled ? 24 : 3
                         color: ColorService.bgBase
                         Behavior on x { NumberAnimation { duration: 150 } }
                     }
@@ -375,41 +446,7 @@ PopupWindow {
                     }
                 }
             }
-
-            Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.08) }
-
-            RowLayout {
-                Layout.fillWidth: true
-                visible: SystemService.isScanningWifi || SystemService.isConnectingWifi || qsRoot._toastVisible
-                spacing: 6
-
-                Text {
-                    visible: !qsRoot._toastVisible
-                    text: SystemService.isConnectingWifi ? "󰤽" : "󰑐"
-                    font.family: Theme.fontIcon
-                    font.pixelSize: 13
-                    color: ColorService.accent
-                }
-
-                Text {
-                    Layout.fillWidth: true
-                    text: {
-                        if (qsRoot._toastVisible)
-                            return qsRoot._toastMsg;
-                        if (SystemService.isConnectingWifi)
-                            return "Connecting to network…";
-                        return "Scanning for networks…";
-                    }
-                    color: qsRoot._toastVisible
-                        ? (qsRoot._toastOk ? ColorService.success : ColorService.danger)
-                        : ColorService.accent
-                    font.family: Theme.fontMain
-                    font.pixelSize: 12
-                    elide: Text.ElideRight
-                    Behavior on color { ColorAnimation { duration: 200 } }
-                }
-            }
-
+            
             ScrollView {
                 id: wifiScroll
                 Layout.fillWidth: true
@@ -418,7 +455,7 @@ PopupWindow {
 
                 ColumnLayout {
                     width: wifiScroll.width
-                    spacing: 4
+                    spacing: 6
 
                     Repeater {
                         model: SystemService.wifiNetworks
@@ -426,25 +463,25 @@ PopupWindow {
                             id: netItem
                             property var net: modelData
                             Layout.fillWidth: true
-                            implicitHeight: isSelected ? 86 : 44
-                            radius: 8
+                            implicitHeight: isSelected ? 92 : 52
+                            radius: 16
                             color: net.inUse
-                                ? Qt.alpha(ColorService.accentDim, 0.4)
-                                : (netArea.containsMouse ? ColorService.bgHover : ColorService.bgSurface)
+                                ? Qt.alpha(ColorService.accent, 0.2)
+                                : (netArea.containsMouse ? ColorService.bgHover : ColorService.bgElevated)
                             border.color: net.inUse ? ColorService.accent : "transparent"
-                            border.width: net.inUse ? 1 : 0
+                            border.width: net.inUse ? 1.5 : 0
                             Behavior on implicitHeight { NumberAnimation { duration: 150 } }
 
                             property bool isSelected: qsRoot.selectedWifiSsid === net.ssid
 
                             ColumnLayout {
                                 anchors.fill: parent
-                                anchors.margins: 8
-                                spacing: 6
+                                anchors.margins: 10
+                                spacing: 8
 
                                 RowLayout {
                                     Layout.fillWidth: true
-                                    spacing: 10
+                                    spacing: 12
 
                                     Text {
                                         text: net.signal > 70 ? "󰤨" : (net.signal > 40 ? "󰤥" : (net.signal > 20 ? "󰤢" : "󰤟"))
@@ -463,7 +500,7 @@ PopupWindow {
                                             font.family: Theme.fontMain
                                             font.pixelSize: 13
                                             font.bold: net.inUse
-                                            elide: Text.ElideRight
+                                            elide: Text.ElideMiddle 
                                         }
                                         Text {
                                             text: net.inUse ? "Connected" : (net.security.length > 0 ? net.security : "Open")
@@ -472,33 +509,17 @@ PopupWindow {
                                             font.pixelSize: 11
                                         }
                                     }
-
-                                    Text {
-                                        visible: net.security.length > 0 && !net.inUse
-                                        text: "󰌾"
-                                        font.family: Theme.fontIcon
-                                        font.pixelSize: 14
-                                        color: ColorService.textSecondary
-                                    }
-
-                                    Text {
-                                        visible: net.inUse
-                                        text: "󰄬"
-                                        font.family: Theme.fontIcon
-                                        font.pixelSize: 16
-                                        color: ColorService.accent
-                                    }
                                 }
 
                                 RowLayout {
                                     visible: netItem.isSelected && !net.inUse
                                     Layout.fillWidth: true
-                                    spacing: 6
+                                    spacing: 8
 
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        height: 30; radius: 6
-                                        color: ColorService.bgElevated
+                                        height: 32; radius: 12
+                                        color: ColorService.bgSurface
                                         border.color: ColorService.accent
                                         border.width: 1
 
@@ -522,11 +543,10 @@ PopupWindow {
                                     }
 
                                     Rectangle {
-                                        width: 68; height: 30; radius: 6
+                                        width: 72; height: 32; radius: 16
                                         color: SystemService.isConnectingWifi
                                             ? Qt.alpha(ColorService.accent, 0.4)
                                             : ColorService.accent
-                                        Behavior on color { ColorAnimation { duration: 150 } }
                                         Text {
                                             anchors.centerIn: parent
                                             text: SystemService.isConnectingWifi ? "…" : "Connect"
@@ -551,7 +571,7 @@ PopupWindow {
                             MouseArea {
                                 id: netArea
                                 anchors.fill: parent
-                                anchors.bottomMargin: netItem.isSelected ? 36 : 0
+                                anchors.bottomMargin: netItem.isSelected ? 40 : 0
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {
@@ -571,10 +591,10 @@ PopupWindow {
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 16
-            spacing: 10
+            anchors.margins: 18
+            spacing: 12
             visible: qsRoot.currentView === "bluetooth"
-
+            
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
@@ -586,50 +606,15 @@ PopupWindow {
                 }
 
                 Text {
-                    text: "Bluetooth Devices"
+                    text: "Bluetooth"
                     color: ColorService.textPrimary
                     font.family: Theme.fontMain
                     font.pixelSize: 16
                     font.bold: true
                     Layout.fillWidth: true
                 }
-
-                QsIconBtn {
-                    icon: "󰑐"
-                    tooltip: "Refresh"
-                    onAct: SystemService.scanBluetooth()
-                }
-
-                Rectangle {
-                    width: 44; height: 24; radius: 12
-                    color: SystemService.bluetoothOn ? ColorService.accent : ColorService.bgElevated
-                    Behavior on color { ColorAnimation { duration: 200 } }
-                    Rectangle {
-                        width: 18; height: 18; radius: 9
-                        anchors.verticalCenter: parent.verticalCenter
-                        x: SystemService.bluetoothOn ? 22 : 4
-                        color: ColorService.bgBase
-                        Behavior on x { NumberAnimation { duration: 150 } }
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: SystemService.toggleBluetooth()
-                    }
-                }
             }
-
-            Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.08) }
-
-            Text {
-                visible: SystemService.isScanningBt
-                text: "Scanning bluetooth devices..."
-                color: ColorService.accent
-                font.family: Theme.fontMain
-                font.pixelSize: 12
-                Layout.alignment: Qt.AlignHCenter
-            }
-
+            
             ScrollView {
                 id: btScroll
                 Layout.fillWidth: true
@@ -638,7 +623,7 @@ PopupWindow {
 
                 ColumnLayout {
                     width: btScroll.width
-                    spacing: 4
+                    spacing: 6
 
                     Repeater {
                         model: SystemService.bluetoothDevices
@@ -646,13 +631,11 @@ PopupWindow {
                             id: devItem
                             property var dev: modelData
                             Layout.fillWidth: true
-                            height: 44
-                            radius: 8
-                            color: dev.connected
-                                ? Qt.alpha(ColorService.accentDim, 0.4)
-                                : (devArea.containsMouse ? ColorService.bgHover : ColorService.bgSurface)
+                            height: 50
+                            radius: 16
+                            color: dev.connected ? Qt.alpha(ColorService.accent, 0.2) : ColorService.bgElevated
                             border.color: dev.connected ? ColorService.accent : "transparent"
-                            border.width: dev.connected ? 1 : 0
+                            border.width: dev.connected ? 1.5 : 0
 
                             RowLayout {
                                 anchors.fill: parent
@@ -678,66 +661,9 @@ PopupWindow {
                                         font.bold: dev.connected
                                         elide: Text.ElideRight
                                     }
-                                    Text {
-                                        text: dev.connected ? "Connected" : dev.mac
-                                        color: dev.connected ? ColorService.accent : ColorService.textSecondary
-                                        font.family: Theme.fontMain
-                                        font.pixelSize: 11
-                                    }
-                                }
-
-                                Rectangle {
-                                    width: 70; height: 26; radius: 6
-                                    color: dev.connected ? Qt.alpha(ColorService.danger, 0.2) : ColorService.bgElevated
-                                    border.color: dev.connected ? ColorService.danger : Qt.rgba(1,1,1,0.1)
-                                    border.width: 1
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: dev.connected ? "Disconnect" : "Connect"
-                                        color: dev.connected ? ColorService.danger : ColorService.textPrimary
-                                        font.family: Theme.fontMain
-                                        font.pixelSize: 11
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            if (dev.connected) {
-                                                SystemService.disconnectBt(dev.mac);
-                                            } else {
-                                                SystemService.connectBt(dev.mac);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            MouseArea {
-                                id: devArea
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (dev.connected) {
-                                        SystemService.disconnectBt(dev.mac);
-                                    } else {
-                                        SystemService.connectBt(dev.mac);
-                                    }
                                 }
                             }
                         }
-                    }
-
-                    Text {
-                        visible: SystemService.bluetoothDevices.length === 0 && !SystemService.isScanningBt
-                        text: SystemService.bluetoothOn ? "No bluetooth devices found." : "Bluetooth is disabled."
-                        color: ColorService.textSecondary
-                        font.family: Theme.fontMain
-                        font.pixelSize: 12
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.topMargin: 20
                     }
                 }
             }
@@ -745,9 +671,36 @@ PopupWindow {
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 16
-            spacing: 10
+            anchors.margins: 18
+            spacing: 12
             visible: qsRoot.currentView === "audio"
+            
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                QsIconBtn {
+                    icon: "󰅁"
+                    tooltip: "Back"
+                    onAct: qsRoot.currentView = "main"
+                }
+
+                Text {
+                    text: "Sound Settings"
+                    color: ColorService.textPrimary
+                    font.family: Theme.fontMain
+                    font.pixelSize: 16
+                    font.bold: true
+                    Layout.fillWidth: true
+                }
+            }
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+            spacing: 12
+            visible: qsRoot.currentView === "notifications"
 
             RowLayout {
                 Layout.fillWidth: true
@@ -760,190 +713,141 @@ PopupWindow {
                 }
 
                 Text {
-                    text: "Audio Devices"
+                    text: "Notifications"
                     color: ColorService.textPrimary
                     font.family: Theme.fontMain
                     font.pixelSize: 16
                     font.bold: true
                     Layout.fillWidth: true
                 }
+
+                Text {
+                    visible: NotificationService.trackedNotifications.count > 0
+                    text: "Clear all"
+                    color: ColorService.accent
+                    font.family: Theme.fontMain
+                    font.pixelSize: 12
+                    font.bold: true
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            const list = NotificationService.trackedNotifications;
+                            for (let i = list.count - 1; i >= 0; i--) {
+                                list.get(i).dismiss();
+                            }
+                        }
+                    }
+                }
             }
 
-            Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.08) }
-
             ScrollView {
-                id: audioScroll
+                id: notifScroll
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
 
-                ColumnLayout {
-                    width: audioScroll.width
+                ListView {
+                    width: notifScroll.width
+                    height: notifScroll.height
+                    model: NotificationService.trackedNotifications
                     spacing: 8
+                    
+                    delegate: Rectangle {
+                        id: notifDelegate
+                        property var notif: modelData
 
-                    Text {
-                        text: "Output"
-                        color: ColorService.accent
-                        font.family: Theme.fontMain
-                        font.pixelSize: 12
-                        font.bold: true
-                    }
+                        width: ListView.view.width
+                        implicitHeight: contentCol.implicitHeight + 24
+                        radius: 16
+                        color: ColorService.bgElevated
+                        border.color: Qt.rgba(1, 1, 1, 0.06)
+                        border.width: 1
 
-                    Repeater {
-                        model: SystemService.audioOutputs
-                        delegate: Rectangle {
-                            id: audioOutItem
-                            Layout.fillWidth: true
-                            implicitWidth: 200
-                            height: 44
-                            radius: 8
-                            color: modelData.inUse
-                                ? Qt.alpha(ColorService.accentDim, 0.4)
-                                : (outArea.containsMouse ? ColorService.bgHover : ColorService.bgSurface)
-                            border.color: modelData.inUse ? ColorService.accent : "transparent"
-                            border.width: modelData.inUse ? 1 : 0
+                        ColumnLayout {
+                            id: contentCol
+                            anchors.fill: parent
+                            anchors.margins: 12
+                            spacing: 6
 
                             RowLayout {
-                                anchors.fill: parent
-                                anchors.margins: 10
-                                spacing: 10
+                                Layout.fillWidth: true
+                                spacing: 8
 
                                 Text {
-                                    text: "󰓃" 
-                                    font.family: Theme.fontIcon
-                                    font.pixelSize: 18
-                                    color: modelData.inUse ? ColorService.accent : ColorService.textPrimary
-                                }
-
-                                Column {
-                                    Layout.fillWidth: true
-                                    Layout.alignment: Qt.AlignVCenter
-                                    spacing: 2
-
-                                    Text {
-                                        width: parent.width
-                                        text: modelData.deviceLabel || SystemService.getNodeLabel(modelData.rawNode)
-                                        color: ColorService.textPrimary
-                                        font.family: Theme.fontMain
-                                        font.pixelSize: 13
-                                        font.bold: modelData.inUse
-                                        elide: Text.ElideRight
-                                    }
-                                }
-
-                                Text {
-                                    visible: modelData.inUse
-                                    text: "󰄬" 
+                                    text: "󰎟" 
                                     font.family: Theme.fontIcon
                                     font.pixelSize: 16
                                     color: ColorService.accent
                                 }
-                            }
-
-                            MouseArea {
-                                id: outArea
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: SystemService.setAudioOutput(modelData)
-                            }
-                        }
-                    }
-
-                    Text {
-                        visible: SystemService.audioOutputs.length === 0
-                        text: "No output devices found."
-                        color: ColorService.textSecondary
-                        font.family: Theme.fontMain
-                        font.pixelSize: 12
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.topMargin: 4
-                        Layout.bottomMargin: 4
-                    }
-
-                    Text {
-                        text: "Input"
-                        color: ColorService.accent
-                        font.family: Theme.fontMain
-                        font.pixelSize: 12
-                        font.bold: true
-                        Layout.topMargin: 8
-                    }
-
-                    Repeater {
-                        model: SystemService.audioInputs
-                        delegate: Rectangle {
-                            id: audioInItem
-                            Layout.fillWidth: true
-                            implicitWidth: 200
-                            height: 44
-                            radius: 8
-                            color: modelData.inUse
-                                ? Qt.alpha(ColorService.accentDim, 0.4)
-                                : (inArea.containsMouse ? ColorService.bgHover : ColorService.bgSurface)
-                            border.color: modelData.inUse ? ColorService.accent : "transparent"
-                            border.width: modelData.inUse ? 1 : 0
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.margins: 10
-                                spacing: 10
 
                                 Text {
-                                    text: "󰍬" 
-                                    font.family: Theme.fontIcon
-                                    font.pixelSize: 18
-                                    color: modelData.inUse ? ColorService.accent : ColorService.textPrimary
+                                    Layout.fillWidth: true
+                                    text: (notif && notif.appName) ? notif.appName : "System"
+                                    color: ColorService.textPrimary
+                                    font.family: Theme.fontMain
+                                    font.pixelSize: 12
+                                    font.bold: true
+                                    elide: Text.ElideRight
                                 }
 
-                                Column {
-                                    Layout.fillWidth: true
-                                    Layout.alignment: Qt.AlignVCenter
-                                    spacing: 2
+                                Text {
+                                    text: "✕"
+                                    color: ColorService.textSecondary
+                                    font.family: Theme.fontMain
+                                    font.pixelSize: 12
 
-                                    Text {
-                                        width: parent.width
-                                        text: modelData.deviceLabel || SystemService.getNodeLabel(modelData.rawNode)
-                                        color: ColorService.textPrimary
-                                        font.family: Theme.fontMain
-                                        font.pixelSize: 13
-                                        font.bold: modelData.inUse
-                                        elide: Text.ElideRight
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (notif && notif.dismiss) {
+                                                notif.dismiss();
+                                            }
+                                        }
                                     }
                                 }
-
-                                Text {
-                                    visible: modelData.inUse
-                                    text: "󰄬"
-                                    font.family: Theme.fontIcon
-                                    font.pixelSize: 16
-                                    color: ColorService.accent
-                                }
                             }
 
-                            MouseArea {
-                                id: inArea
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: SystemService.setAudioInput(modelData)
+                            Text {
+                                visible: notif && notif.summary && notif.summary.length > 0
+                                text: notif ? notif.summary : ""
+                                color: ColorService.textPrimary
+                                font.family: Theme.fontMain
+                                font.pixelSize: 13
+                                font.bold: true
+                                Layout.fillWidth: true
+                                wrapMode: Text.Wrap
+                            }
+
+                            Text {
+                                visible: notif && notif.body && notif.body.length > 0
+                                text: notif ? notif.body : ""
+                                color: ColorService.textSecondary
+                                font.family: Theme.fontMain
+                                font.pixelSize: 12
+                                Layout.fillWidth: true
+                                wrapMode: Text.Wrap
+                                textFormat: Text.PlainText
                             }
                         }
-                    }
-
-                    Text {
-                        visible: SystemService.audioInputs.length === 0
-                        text: "No input devices found."
-                        color: ColorService.textSecondary
-                        font.family: Theme.fontMain
-                        font.pixelSize: 12
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.topMargin: 4
                     }
                 }
             }
+            
+            Text {
+                visible: NotificationService.trackedNotifications.count === 0
+                text: "No notifications right now."
+                color: ColorService.textSecondary
+                font.family: Theme.fontMain
+                font.pixelSize: 13
+                Layout.alignment: Qt.AlignHCenter
+                Layout.topMargin: 20
+            }
         }
     }
+
 
     component QsIconBtn: Rectangle {
         id: iconBtn
@@ -954,8 +858,8 @@ PopupWindow {
 
         width: 32; height: 32; radius: 16
         color: ibArea.containsMouse
-            ? (danger ? ColorService.danger : ColorService.bgHover)
-            : (danger ? Qt.alpha(ColorService.danger, 0.25) : ColorService.bgSurface)
+            ? (danger ? ColorService.danger : Qt.alpha(ColorService.accent, 0.3))
+            : (danger ? Qt.alpha(ColorService.danger, 0.2) : Qt.alpha(ColorService.accent, 0.15))
         Behavior on color { ColorAnimation { duration: 150 } }
 
         Text {
@@ -964,11 +868,10 @@ PopupWindow {
             font.family: Theme.fontIcon
             font.pixelSize: 14
             color: danger ? (ibArea.containsMouse ? ColorService.bgBase : ColorService.danger) : ColorService.textPrimary
-            Behavior on color { ColorAnimation { duration: 150 } }
         }
         ToolTip.text: iconBtn.tooltip
         ToolTip.visible: ibArea.containsMouse && iconBtn.tooltip.length > 0
-        ToolTip.delay: 600
+        ToolTip.delay: 500
         MouseArea {
             id: ibArea
             anchors.fill: parent
@@ -988,33 +891,28 @@ PopupWindow {
         signal openDetail()
 
         Layout.fillWidth: true
-        height: 58
-        radius: Theme.radiusMedium
-        color: active ? ColorService.accentDim : ColorService.bgSurface
-        border.color: active ? ColorService.accent : "transparent"
-        border.width: active ? 1.5 : 0
-        Behavior on color        { ColorAnimation { duration: 200 } }
-        Behavior on border.color { ColorAnimation { duration: 200 } }
+        height: 64
+        radius: 20
+        color: active ? ColorService.accent : ColorService.bgElevated
+        Behavior on color { ColorAnimation { duration: 200 } }
 
         RowLayout {
             anchors.fill: parent
-            anchors.margins: 8
-            spacing: 6
+            anchors.margins: 6
+            spacing: 4
 
             Rectangle {
-                width: 36; height: 36; radius: 18
-                color: toggleArea.containsMouse ? ColorService.bgHover : "transparent"
+                width: 44; height: 44; radius: 22
+                color: tile.active ? Qt.rgba(0, 0, 0, 0.15) : Qt.rgba(1, 1, 1, 0.08)
                 Text {
                     anchors.centerIn: parent
                     text: tile.icon
                     font.family: Theme.fontIcon
-                    font.pixelSize: 18
-                    color: tile.active ? ColorService.accent : ColorService.textPrimary
+                    font.pixelSize: 20
+                    color: tile.active ? ColorService.bgBase : ColorService.textPrimary
                 }
                 MouseArea {
-                    id: toggleArea
                     anchors.fill: parent
-                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: tile.toggle()
                 }
@@ -1025,35 +923,40 @@ PopupWindow {
                 spacing: 2
                 Text {
                     text: tile.label
-                    color: ColorService.textPrimary
+                    color: tile.active ? ColorService.bgBase : ColorService.textPrimary
                     font.family: Theme.fontMain
                     font.bold: true
                     font.pixelSize: 13
                 }
                 Text {
                     text: tile.sublabel
-                    color: ColorService.textSecondary
+                    width: parent.width
+                    color: tile.active ? Qt.alpha(ColorService.bgBase, 0.8) : ColorService.textSecondary
                     font.family: Theme.fontMain
                     font.pixelSize: 11
-                    elide: Text.ElideRight
+                    elide: Text.ElideMiddle 
                 }
             }
 
-            Text {
-                text: "❯"
-                font.family: Theme.fontMain
-                font.pixelSize: 12
-                font.bold: true
-                color: ColorService.textSecondary
-                Layout.rightMargin: 4
+            Rectangle {
+                width: 32; height: 44; radius: 16
+                color: detailArea.containsMouse ? (tile.active ? Qt.rgba(0, 0, 0, 0.1) : Qt.rgba(1, 1, 1, 0.08)) : "transparent"
+                Text {
+                    anchors.centerIn: parent
+                    text: "❯"
+                    font.family: Theme.fontMain
+                    font.pixelSize: 11
+                    font.bold: true
+                    color: tile.active ? ColorService.bgBase : ColorService.textSecondary
+                }
+                MouseArea {
+                    id: detailArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: tile.openDetail()
+                }
             }
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            anchors.leftMargin: 44
-            cursorShape: Qt.PointingHandCursor
-            onClicked: tile.openDetail()
         }
     }
 
@@ -1066,37 +969,42 @@ PopupWindow {
         signal tap()
 
         Layout.fillWidth: true
-        height: 58
-        radius: Theme.radiusMedium
-        color: active ? ColorService.accentDim : ColorService.bgSurface
-        border.color: active ? ColorService.accent : "transparent"
-        border.width: active ? 1.5 : 0
-        Behavior on color        { ColorAnimation { duration: 200 } }
-        Behavior on border.color { ColorAnimation { duration: 200 } }
+        height: 64
+        radius: 20
+        color: active ? ColorService.accent : ColorService.bgElevated
+        Behavior on color { ColorAnimation { duration: 200 } }
 
         RowLayout {
             anchors.fill: parent
             anchors.margins: 10
             spacing: 10
 
-            Text {
-                text: tile.icon
-                font.family: Theme.fontIcon
-                font.pixelSize: 20
-                color: tile.active ? ColorService.accent : ColorService.textPrimary
+            Rectangle {
+                width: 44; height: 44; radius: 22
+                color: tile.active ? Qt.rgba(0, 0, 0, 0.15) : Qt.rgba(1, 1, 1, 0.08)
+                Text {
+                    anchors.centerIn: parent
+                    text: tile.icon
+                    font.family: Theme.fontIcon
+                    font.pixelSize: 20
+                    color: tile.active ? ColorService.bgBase : ColorService.textPrimary
+                }
             }
+
             Column {
+                Layout.fillWidth: true
                 spacing: 2
                 Text {
                     text: tile.label
-                    color: ColorService.textPrimary
+                    color: tile.active ? ColorService.bgBase : ColorService.textPrimary
                     font.family: Theme.fontMain
                     font.bold: true
                     font.pixelSize: 13
                 }
                 Text {
                     text: tile.sublabel
-                    color: ColorService.textSecondary
+                    width: parent.width
+                    color: tile.active ? Qt.alpha(ColorService.bgBase, 0.8) : ColorService.textSecondary
                     font.family: Theme.fontMain
                     font.pixelSize: 11
                     elide: Text.ElideRight
@@ -1111,7 +1019,7 @@ PopupWindow {
         }
     }
 
-    component QsSlider: RowLayout {
+    component QsSlider: Rectangle {
         id: slRow
         property string iconOn: ""
         property string iconOff: ""
@@ -1123,91 +1031,82 @@ PopupWindow {
         signal detailClicked() 
 
         Layout.fillWidth: true
-        spacing: 10
+        height: 48
+        radius: 24
+        color: ColorService.bgElevated
+        clip: true
 
-        Text {
-            text: slRow.muted ? slRow.iconOff : slRow.iconOn
-            font.family: Theme.fontIcon
-            font.pixelSize: 18
-            color: slRow.muted ? ColorService.textSecondary : ColorService.textPrimary
+        Rectangle {
+            id: filledTrack
+            height: parent.height
+            radius: parent.radius
+            width: Math.max(parent.height, Math.min(parent.width, parent.width * (slRow.value / 100.0)))
+            color: slRow.muted ? ColorService.textSecondary : ColorService.accent
             Behavior on color { ColorAnimation { duration: 200 } }
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: slRow.iconClicked()
-            }
         }
 
-        Item {
-            id: track
-            Layout.fillWidth: true
-            implicitWidth: 160
-            implicitHeight: 24
-            height: 24
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
+            spacing: 8
 
-            Rectangle {
-                id: bgTrack
-                anchors.verticalCenter: parent.verticalCenter
-                width: parent.width; height: 6; radius: 3
-                color: ColorService.bgElevated
-
-                Rectangle {
-                    width: Math.max(0, Math.min(parent.width, parent.width * (slRow.value / 100.0)))
-                    height: parent.height; radius: parent.radius
-                    color: slRow.muted ? ColorService.textSecondary : ColorService.accent
-                    Behavior on color { ColorAnimation { duration: 200 } }
-                }
-            }
-
-            Rectangle {
-                anchors.verticalCenter: parent.verticalCenter
-                x: Math.max(0, Math.min(track.width - width, (track.width - width) * (slRow.value / 100.0)))
-                width: 18; height: 18; radius: 9
-                color: ColorService.accent
-                border.color: Qt.rgba(0,0,0,0.2)
-                border.width: 1
+            Text {
+                text: slRow.muted ? slRow.iconOff : slRow.iconOn
+                font.family: Theme.fontIcon
+                font.pixelSize: 18
+                color: (slRow.value > 15) ? ColorService.bgBase : ColorService.textPrimary
                 Behavior on color { ColorAnimation { duration: 200 } }
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                preventStealing: true
-
-                function calculateAndEmit(mouseX) {
-                    let pct = Math.max(0, Math.min(100, Math.round((mouseX / track.width) * 100)));
-                    slRow.sliderMoved(pct);
-                }
-
-                onPressed: (mouse) => calculateAndEmit(mouse.x)
-                onPositionChanged: (mouse) => {
-                    if (pressed) calculateAndEmit(mouse.x);
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: slRow.iconClicked()
                 }
             }
-        }
 
-        Text {
-            text: Math.round(slRow.value) + "%"
-            color: ColorService.textSecondary
-            font.family: Theme.fontMain
-            font.pixelSize: 12
-            width: 32
-            horizontalAlignment: Text.AlignRight
-            Behavior on color { ColorAnimation { duration: 400 } }
-        }
+            Item {
+                id: track
+                Layout.fillWidth: true
+                height: parent.height
 
-        Text {
-            visible: slRow.hasDetail
-            text: "❯"
-            font.family: Theme.fontMain
-            font.pixelSize: 12
-            font.bold: true
-            color: ColorService.textSecondary
-            MouseArea {
-                anchors.fill: parent
-                anchors.margins: -8
-                cursorShape: Qt.PointingHandCursor
-                onClicked: slRow.detailClicked()
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    preventStealing: true
+
+                    function calculateAndEmit(mouseX) {
+                        let pct = Math.max(0, Math.min(100, Math.round((mouseX / track.width) * 100)));
+                        slRow.sliderMoved(pct);
+                    }
+
+                    onPressed: (mouse) => calculateAndEmit(mouse.x)
+                    onPositionChanged: (mouse) => {
+                        if (pressed) calculateAndEmit(mouse.x);
+                    }
+                }
+            }
+
+            Text {
+                text: Math.round(slRow.value) + "%"
+                color: (slRow.value > 85) ? ColorService.bgBase : ColorService.textPrimary
+                font.family: Theme.fontMain
+                font.pixelSize: 12
+                font.bold: true
+            }
+
+            Text {
+                visible: slRow.hasDetail
+                text: "❯"
+                font.family: Theme.fontMain
+                font.pixelSize: 11
+                font.bold: true
+                color: (slRow.value > 92) ? ColorService.bgBase : ColorService.textSecondary
+                MouseArea {
+                    anchors.fill: parent
+                    anchors.margins: -6
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: slRow.detailClicked()
+                }
             }
         }
     }
