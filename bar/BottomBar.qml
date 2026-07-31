@@ -14,10 +14,10 @@ PanelWindow {
 
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.exclusionMode: ExclusionMode.Normal
-    WlrLayershell.exclusiveZone: 48
+    WlrLayershell.exclusiveZone: 64
 
     anchors { bottom: true; left: true; right: true }
-    implicitHeight: 48
+    implicitHeight: 64
 
     signal toggleLauncher()
     signal toggleQuickSettings()
@@ -47,22 +47,35 @@ PanelWindow {
         return "";
     }
 
-    function getAllToplevels() {
-        let result = [];
-        let seen = new Set();
+    function isWindowValidAndVisible(t) {
+        if (!t) return false;
+        if (t.lastIpcObject) {
+            if (t.lastIpcObject.mapped === false) return false;
+            if (t.lastIpcObject.hidden === true) return false;
+        }
+        let aid = barWindow.getAppId(t);
+        if (!aid || aid.length === 0) return false;
+        return true;
+    }
 
-        if (typeof Hyprland !== "undefined" && Hyprland && Hyprland.toplevels && Hyprland.toplevels.values) {
-            let vals = Hyprland.toplevels.values;
-            for (let i = 0; i < vals.length; i++) {
-                let t = vals[i];
-                if (t) {
-                    let id = barWindow.getAppId(t).toLowerCase();
-                    if (id && !seen.has(id)) seen.add(id);
-                    result.push(t);
-                }
+    function getUnpinnedApps() {
+        if (typeof Hyprland === "undefined" || !Hyprland.toplevels || !Hyprland.toplevels.values)
+            return [];
+
+        let vals = Hyprland.toplevels.values;
+        let result = [];
+        let seenAppIds = new Set();
+
+        for (let i = 0; i < vals.length; i++) {
+            let t = vals[i];
+            if (!isWindowValidAndVisible(t)) continue;
+
+            let appId = barWindow.getAppId(t).toLowerCase();
+            if (!barWindow.isToplevelPinned(t) && !seenAppIds.has(appId)) {
+                seenAppIds.add(appId);
+                result.push(t);
             }
         }
-
         return result;
     }
 
@@ -70,7 +83,6 @@ PanelWindow {
         if (!pinData) return null;
         let appId = (pinData.appId || "").toLowerCase().replace(/\.desktop$/, "");
         let exec = (pinData.exec || "").toLowerCase();
-        let name = (pinData.name || "").toLowerCase();
         let icon = (pinData.icon || "").toLowerCase();
 
         if (typeof Hyprland === "undefined" || !Hyprland || !Hyprland.toplevels || !Hyprland.toplevels.values)
@@ -79,6 +91,8 @@ PanelWindow {
         let vals = Hyprland.toplevels.values;
         for (let i = 0; i < vals.length; i++) {
             let t = vals[i];
+            if (!isWindowValidAndVisible(t)) continue;
+
             let tApp = getAppId(t).toLowerCase();
             if (!tApp) continue;
 
@@ -144,221 +158,211 @@ PanelWindow {
 
     color: "transparent"
 
-    Rectangle {
-        anchors.fill: parent
-        color: Qt.alpha(Qt.darker(ColorService.bgBase, 1.1), 0.92)
-        layer.enabled: true
-
-        Behavior on color { ColorAnimation { duration: 400 } }
-    }
-
-    Rectangle {
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: 1
-        color: Qt.rgba(1, 1, 1, 0.08)
-    }
-
     Item {
         id: barContent
         anchors.fill: parent
-        anchors.leftMargin: 8
-        anchors.rightMargin: 8
+        anchors.leftMargin: 16
+        anchors.rightMargin: 16
+        anchors.bottomMargin: 8
 
-        // LEFT: Launcher + Workspaces (Desks)
-        Item {
+        // =========================================================
+        // LEFT PILL: LAUNCHER & WORKSPACES
+        // =========================================================
+        Rectangle {
             id: leftSection
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            width: launcherBtn.width + workspaceRow.width + 12
-            height: parent.height
+            width: leftLayout.implicitWidth + 20
+            height: 48
+            radius: 24
+            color: Qt.rgba(ColorService.bgElevated.r, ColorService.bgElevated.g, ColorService.bgElevated.b, 0.82)
+            border.color: Qt.alpha(ColorService.accent, 0.18)
+            border.width: 1.5
 
-            Rectangle {
-                id: launcherBtn
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                width: 36; height: 36; radius: 18
-                color: launcherMouse.containsMouse
-                    ? Qt.alpha(ColorService.accent, 0.18)
-                    : "transparent"
-
-                Behavior on color { ColorAnimation { duration: 150 } }
-
-                Item {
-                    anchors.centerIn: parent
-                    width: 20
-                    height: 20
-
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: 18
-                        height: 18
-                        radius: 9
-                        color: "transparent"
-                        border.color: ColorService.textPrimary
-                        border.width: 2
-                    }
-
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: 8
-                        height: 8
-                        radius: 4
-                        color: ColorService.textPrimary
-                    }
-                }
-
-                MouseArea {
-                    id: launcherMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: barWindow.toggleLauncher()
-                }
-            }
-
-            Row {
-                id: workspaceRow
-                anchors.left: launcherBtn.right
-                anchors.leftMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 6
-
-                Repeater {
-                    model: {
-                        let ids = [];
-                        if (Hyprland.workspaces && Hyprland.workspaces.values) {
-                            let ws = Hyprland.workspaces.values;
-                            for (let i = 0; i < ws.length; i++) {
-                                let w = ws[i];
-                                if (w && w.id > 0 && w.id <= 9) ids.push(w.id);
-                            }
-                        }
-                        for (let i = 1; i <= 3; i++) {
-                            if (!ids.includes(i)) ids.push(i);
-                        }
-                        ids.sort((a, b) => a - b);
-                        return ids;
-                    }
-
-                    delegate: Rectangle {
-                        id: wsBadge
-                        property int wsId: modelData
-                        property bool isActive: {
-                            let fw = Hyprland.focusedWorkspace;
-                            return fw ? fw.id === wsId : false;
-                        }
-
-                        implicitWidth: wsText.implicitWidth + 18
-                        height: 26
-                        radius: 13
-                        anchors.verticalCenter: parent.verticalCenter
-
-                        color: isActive
-                            ? Qt.alpha(ColorService.accent, 0.25)
-                            : (wsMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(1, 1, 1, 0.05))
-                        border.color: isActive ? ColorService.accent : Qt.rgba(1, 1, 1, 0.1)
-                        border.width: isActive ? 1.5 : 1
-
-                        Behavior on implicitWidth { NumberAnimation { duration: 180 } }
-                        Behavior on color         { ColorAnimation  { duration: 180 } }
-                        Behavior on border.color  { ColorAnimation  { duration: 180 } }
-
-                        Text {
-                            id: wsText
-                            anchors.centerIn: parent
-                            text: "Desk " + wsId
-                            color: isActive ? ColorService.accent : ColorService.textSecondary
-                            font.family: Theme.fontMain
-                            font.pixelSize: 11
-                            font.bold: isActive
-                            Behavior on color { ColorAnimation { duration: 180 } }
-                        }
-
-                        MouseArea {
-                            id: wsMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: Hyprland.dispatch("workspace " + wsId)
-                        }
-                    }
-                }
-            }
-        }
-
-        // CENTER: Pinned Apps + Open Windows Dock
-        Row {
-            id: centerDock
-            anchors.centerIn: parent
-            spacing: 4
-
-            Repeater {
-                model: PinsService.pins
-                delegate: ShelfItem {
-                    id: pinnedItem
-                    pinData: modelData
-                    openToplevel: barWindow.findMatchingToplevel(modelData)
-                    onRequestContextMenu: (mx, my) => {
-                        let mapped = pinnedItem.mapToItem(barContent, mx, my);
-                        barWindow.openShelfContextMenu(pinnedItem, mapped.x);
-                    }
-                }
-            }
-
-            Item {
-                id: dockPipeSeparator
-                property bool hasUnpinned: {
-                    if (typeof Hyprland === "undefined" || !Hyprland.toplevels || !Hyprland.toplevels.values)
-                        return false;
-                    let _dep = Hyprland.activeToplevel;
-                    let vals = Hyprland.toplevels.values;
-                    for (let i = 0; i < vals.length; i++) {
-                        if (vals[i] && !barWindow.isToplevelPinned(vals[i])) return true;
-                    }
-                    return false;
-                }
-                visible: PinsService.pins.length > 0 && hasUnpinned
-                width: 12
-                height: 44
-                anchors.verticalCenter: parent.verticalCenter
+            RowLayout {
+                id: leftLayout
+                anchors.centerIn: parent
+                spacing: 10
 
                 Rectangle {
-                    anchors.centerIn: parent
-                    width: 2
-                    height: 20
-                    radius: 1
-                    color: Qt.rgba(1, 1, 1, 0.25)
+                    id: launcherBtn
+                    width: 38; height: 38; radius: 19
+                    color: launcherMouse.containsMouse 
+                        ? Qt.alpha(ColorService.accent, 0.25) 
+                        : Qt.alpha(ColorService.accent, 0.1)
+                    scale: launcherMouse.containsMouse ? 1.08 : 1.0
 
-                    Behavior on color { ColorAnimation { duration: 400 } }
+                    Behavior on color { ColorAnimation { duration: 180 } }
+                    Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+
+                    Item {
+                        anchors.centerIn: parent
+                        width: 20; height: 20
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 18; height: 18; radius: 9
+                            color: "transparent"
+                            border.color: ColorService.accent
+                            border.width: 2.5
+                        }
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 8; height: 8; radius: 4
+                            color: ColorService.accent
+                        }
+                    }
+
+                    MouseArea {
+                        id: launcherMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: barWindow.toggleLauncher()
+                    }
                 }
-            }
 
-            Repeater {
-                id: unpinnedApps
-                model: (typeof Hyprland !== "undefined" && Hyprland.toplevels) ? Hyprland.toplevels : null
-                delegate: ShelfItem {
-                    id: unpinnedItem
-                    required property var modelData
-                    visible: modelData && !barWindow.isToplevelPinned(modelData)
-                    width: visible ? 44 : 0
-                    pinData: null
-                    openToplevel: modelData
-                    onRequestContextMenu: (mx, my) => {
-                        let mapped = unpinnedItem.mapToItem(barContent, mx, my);
-                        barWindow.openShelfContextMenu(unpinnedItem, mapped.x);
+                Row {
+                    id: workspaceRow
+                    spacing: 6
+
+                    Repeater {
+                        model: {
+                            let ids = [];
+                            if (Hyprland.workspaces && Hyprland.workspaces.values) {
+                                let ws = Hyprland.workspaces.values;
+                                for (let i = 0; i < ws.length; i++) {
+                                    let w = ws[i];
+                                    if (w && w.id > 0 && w.id <= 9) ids.push(w.id);
+                                }
+                            }
+                            for (let i = 1; i <= 3; i++) {
+                                if (!ids.includes(i)) ids.push(i);
+                            }
+                            ids.sort((a, b) => a - b);
+                            return ids;
+                        }
+
+                        delegate: Rectangle {
+                            id: wsBadge
+                            property int wsId: modelData
+                            property bool isActive: {
+                                let fw = Hyprland.focusedWorkspace;
+                                return fw ? fw.id === wsId : false;
+                            }
+
+                            implicitWidth: isActive ? wsText.implicitWidth + 24 : 32
+                            height: 32
+                            radius: 16
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            color: isActive 
+                                ? ColorService.accent 
+                                : (wsMouse.containsMouse ? Qt.alpha(ColorService.accent, 0.15) : "transparent")
+
+                            scale: wsMouse.containsMouse && !isActive ? 1.08 : 1.0
+
+                            Behavior on implicitWidth { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                            Behavior on color         { ColorAnimation  { duration: 180 } }
+                            Behavior on scale         { NumberAnimation { duration: 180 } }
+
+                            Text {
+                                id: wsText
+                                anchors.centerIn: parent
+                                text: isActive ? "Desk " + wsId : wsId.toString()
+                                color: isActive ? ColorService.bgBase : ColorService.textPrimary
+                                font.family: Theme.fontMain
+                                font.pixelSize: 12
+                                font.bold: true
+                                Behavior on color { ColorAnimation { duration: 180 } }
+                            }
+
+                            MouseArea {
+                                id: wsMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: Hyprland.dispatch("workspace " + wsId)
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // RIGHT: System Tray + ChromeOS Quick Settings Pod
+        // =========================================================
+        // CENTER PILL: APP DOCK
+        // =========================================================
+        Rectangle {
+            id: centerSection
+            anchors.centerIn: parent
+            width: centerDock.implicitWidth + 24
+            height: 52
+            radius: 26
+            color: Qt.rgba(ColorService.bgElevated.r, ColorService.bgElevated.g, ColorService.bgElevated.b, 0.82)
+            border.color: Qt.alpha(ColorService.accent, 0.18)
+            border.width: 1.5
+
+            Row {
+                id: centerDock
+                anchors.centerIn: parent
+                spacing: 8
+
+                Repeater {
+                    model: PinsService.pins
+                    delegate: ShelfItem {
+                        id: pinnedItem
+                        pinData: modelData
+                        openToplevel: barWindow.findMatchingToplevel(modelData)
+                        onRequestContextMenu: (mx, my) => {
+                            let mapped = pinnedItem.mapToItem(barContent, mx, my);
+                            barWindow.openShelfContextMenu(pinnedItem, mapped.x);
+                        }
+                    }
+                }
+
+                Item {
+                    id: dockPipeSeparator
+                    property bool hasUnpinned: barWindow.getUnpinnedApps().length > 0
+                    visible: PinsService.pins.length > 0 && hasUnpinned
+                    width: 12
+                    height: 40
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 3
+                        height: 20
+                        radius: 1.5
+                        color: Qt.alpha(ColorService.accent, 0.3)
+                    }
+                }
+
+                Repeater {
+                    id: unpinnedApps
+                    model: barWindow.getUnpinnedApps()
+                    delegate: ShelfItem {
+                        id: unpinnedItem
+                        required property var modelData
+                        pinData: null
+                        openToplevel: modelData
+                        onRequestContextMenu: (mx, my) => {
+                            let mapped = unpinnedItem.mapToItem(barContent, mx, my);
+                            barWindow.openShelfContextMenu(unpinnedItem, mapped.x);
+                        }
+                    }
+                }
+            }
+        }
+
+        // =========================================================
+        // RIGHT PILL: SYSTEM STATUS & CLOCK
+        // =========================================================
         RowLayout {
             id: rightSection
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            spacing: 8
+            spacing: 10
 
             SystemTray {
                 Layout.alignment: Qt.AlignVCenter
@@ -367,14 +371,14 @@ PanelWindow {
             Rectangle {
                 id: statusPill
                 Layout.alignment: Qt.AlignVCenter
-                height: 36
+                height: 48
                 implicitWidth: statusRow.implicitWidth + 24
-                radius: 18
-                color: statusMouse.containsMouse
-                    ? Qt.alpha(ColorService.bgHover, 1.0)
-                    : Qt.alpha(ColorService.bgSurface, 0.9)
-                border.color: Qt.rgba(1, 1, 1, 0.08)
-                border.width: 1
+                radius: 24
+                color: statusMouse.containsMouse 
+                    ? Qt.alpha(ColorService.bgHover, 0.95) 
+                    : Qt.rgba(ColorService.bgElevated.r, ColorService.bgElevated.g, ColorService.bgElevated.b, 0.82)
+                border.color: Qt.alpha(ColorService.accent, 0.18)
+                border.width: 1.5
 
                 Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -382,54 +386,65 @@ PanelWindow {
                     id: statusRow
                     anchors.centerIn: parent
                     spacing: 10
-
-                    Text {
-                        text: SystemService.wifiConnected ? "󰤨" : "󰤭"
-                        font.family: Theme.fontIcon
-                        font.pixelSize: 14
-                        color: ColorService.textPrimary
-                        Layout.alignment: Qt.AlignVCenter
-                    }
-
-                    Text {
-                        text: SystemService.isMuted ? "󰖁" : (SystemService.volume > 60 ? "󰕾" : (SystemService.volume > 0 ? "󰖀" : "󰕿"))
-                        font.family: Theme.fontIcon
-                        font.pixelSize: 14
-                        color: ColorService.textPrimary
-                        Layout.alignment: Qt.AlignVCenter
-                    }
-
                     RowLayout {
-                        spacing: 3
+                        spacing: 8
                         Layout.alignment: Qt.AlignVCenter
+
                         Text {
-                            text: {
-                                let lvl = SystemService.batteryLevel;
-                                if (SystemService.isCharging) return "󰂄";
-                                if (lvl > 90) return "󰁹";
-                                if (lvl > 70) return "󰂀";
-                                if (lvl > 50) return "󰁾";
-                                if (lvl > 30) return "󰁼";
-                                if (lvl > 15) return "󰁺";
-                                return "󰁻";
-                            }
+                            text: SystemService.wifiConnected ? "󰤨" : "󰤭"
                             font.family: Theme.fontIcon
-                            font.pixelSize: 14
-                            color: SystemService.batteryLevel <= 15 ? ColorService.danger : ColorService.textPrimary
+                            font.pixelSize: 15
+                            color: SystemService.wifiConnected ? ColorService.accent : ColorService.textSecondary
                         }
+
                         Text {
-                            text: SystemService.batteryLevel + "%"
-                            color: ColorService.textPrimary
-                            font.family: Theme.fontMain
-                            font.pixelSize: 12
-                            font.bold: true
+                            text: SystemService.isMuted ? "󰖁" : (SystemService.volume > 60 ? "󰕾" : (SystemService.volume > 0 ? "󰖀" : "󰕿"))
+                            font.family: Theme.fontIcon
+                            font.pixelSize: 15
+                            color: SystemService.isMuted ? ColorService.danger : ColorService.accent
+                        }
+
+                        Rectangle {
+                            implicitWidth: batRow.implicitWidth + 12
+                            height: 26
+                            radius: 13
+                            color: Qt.alpha(ColorService.accent, 0.15)
+                            Layout.alignment: Qt.AlignVCenter
+
+                            RowLayout {
+                                id: batRow
+                                anchors.centerIn: parent
+                                spacing: 4
+
+                                Text {
+                                    text: {
+                                        let lvl = SystemService.batteryLevel;
+                                        if (SystemService.isCharging) return "󰂄";
+                                        if (lvl > 90) return "󰁹";
+                                        if (lvl > 70) return "󰂀";
+                                        if (lvl > 50) return "󰁾";
+                                        if (lvl > 30) return "󰁼";
+                                        if (lvl > 15) return "󰁺";
+                                        return "󰁻";
+                                    }
+                                    font.family: Theme.fontIcon
+                                    font.pixelSize: 14
+                                    color: SystemService.batteryLevel <= 15 ? ColorService.danger : ColorService.accent
+                                }
+                                Text {
+                                    text: SystemService.batteryLevel + "%"
+                                    color: ColorService.textPrimary
+                                    font.family: Theme.fontMain
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                }
+                            }
                         }
                     }
 
                     Rectangle {
-                        width: 1
-                        height: 16
-                        color: Qt.rgba(1, 1, 1, 0.2)
+                        width: 2; height: 18; radius: 1
+                        color: Qt.alpha(ColorService.accent, 0.2)
                         Layout.alignment: Qt.AlignVCenter
                     }
 
