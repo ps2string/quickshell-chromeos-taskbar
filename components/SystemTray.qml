@@ -35,9 +35,8 @@ RowLayout {
             QsMenuAnchor {
                 id: menuAnchor
                 menu: modelData.menu
-                
+
                 anchor {
-                    item: itemDelegate
                     edges: Edges.Top
                     gravity: Edges.Top
                 }
@@ -46,17 +45,28 @@ RowLayout {
             MouseArea {
                 id: mouseArea
                 anchors.fill: parent
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
 
                 onClicked: mouse => {
                     if (mouse.button === Qt.RightButton) {
-                        if (modelData.hasMenu) {
+                        if (modelData.menu) {
+                            menuAnchor.anchor.item = itemDelegate;
                             menuAnchor.open();
+                        } else if (modelData.hasMenu) {
+                            let win = itemDelegate.Window.window;
+                            if (win) {
+                                let pos = mouseArea.mapToItem(null, mouse.x, mouse.y);
+                                modelData.display(win, pos.x, pos.y);
+                            }
+                        } else {
+                            modelData.secondaryActivate();
                         }
                     } else if (mouse.button === Qt.LeftButton) {
                         modelData.activate();
+                    } else if (mouse.button === Qt.MiddleButton) {
+                        modelData.secondaryActivate();
                     }
                 }
             }
