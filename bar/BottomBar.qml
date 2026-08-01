@@ -125,7 +125,7 @@ PanelWindow {
 
     Process {
         id: clockProc
-        command: ["date", "+%H:%M|%b %d|%a"]
+        command: ["date", "+%r|%B %D|%A"]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {
