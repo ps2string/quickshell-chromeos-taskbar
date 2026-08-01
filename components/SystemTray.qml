@@ -1,3 +1,10 @@
+//@ pragma IconTheme Papirus
+//@ pragma Env QS_ICON_THEME=Papirus
+
+//@ pragma Env QT_QUICK_CONTROLS_STYLE=Material
+//@ pragma Env QT_QUICK_CONTROLS_MATERIAL_THEME=Dark
+//@ pragma Env QT_QUICK_CONTROLS_MATERIAL_ACCENT=Blue
+
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -52,6 +59,7 @@ RowLayout {
                 onClicked: mouse => {
                     if (mouse.button === Qt.RightButton) {
                         if (modelData.menu) {
+
                             menuAnchor.anchor.item = itemDelegate;
                             menuAnchor.open();
                         } else if (modelData.hasMenu) {
@@ -70,12 +78,26 @@ RowLayout {
                     }
                 }
             }
-
-            ToolTip {
-                visible: mouseArea.containsMouse && (modelData.tooltipTitle !== "" || modelData.title !== "")
-                delay: 300
-                text: modelData.tooltipTitle !== "" ? modelData.tooltipTitle : modelData.title
-            }
+                        ToolTip {
+                        id: trayTooltip
+                            y: -implicitHeight - 12
+                            
+                            visible: mouseArea.containsMouse && (modelData.tooltipTitle !== "" || modelData.title !== "")
+                            delay: 300
+                            text: modelData.tooltipTitle !== "" ? modelData.tooltipTitle : modelData.title
+                            background: Rectangle {
+                                color: Qt.rgba(0.1, 0.1, 0.15, 0.95) 
+                                radius: 8
+                                border.color: Qt.rgba(1, 1, 1, 0.15)
+                                border.width: 1
+                            }
+                            contentItem: Text {
+                                text: trayTooltip.text
+                                color: "white"
+                                font.pixelSize: 11
+                                font.bold: true
+                            }
+                        }
         }
     }
 }
