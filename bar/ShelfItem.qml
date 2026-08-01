@@ -13,8 +13,11 @@ Item {
     property var pinData: null
     property var openToplevel: null
 
-    function getToplevelAppId(t) {
+   function getToplevelAppId(t) {
         if (!t) return "";
+        
+        if (t.wayland && t.wayland.appId) return t.wayland.appId;
+
         if (t.lastIpcObject) {
             let cls = t.lastIpcObject["class"];
             if (cls && typeof cls === "string" && cls.length > 0) return cls;
@@ -24,18 +27,26 @@ Item {
         if (t.appId && typeof t.appId === "string" && t.appId.length > 0) return t.appId;
         return "";
     }
-
     function activateWindow() {
-        if (!openToplevel) return;
-        if (typeof openToplevel.activate === "function") {
-            openToplevel.activate();
-        } else if (openToplevel.lastIpcObject && openToplevel.lastIpcObject.address) {
-            Hyprland.dispatch("focuswindow address:" + openToplevel.lastIpcObject.address);
-        } else {
+            if (!openToplevel) return;
+    
+            if (openToplevel.wayland && typeof openToplevel.wayland.activate === "function") {
+                openToplevel.wayland.activate();
+                return;
+            }
+    
+            if (openToplevel.address) {
+                let addr = openToplevel.address;
+                if (!addr.startsWith("0x")) addr = "0x" + addr;
+                Hyprland.dispatch("focuswindow address:" + addr);
+                return;
+            }
+    
             let aid = getToplevelAppId(openToplevel);
-            if (aid.length > 0) Hyprland.dispatch("focuswindow " + aid);
+            if (aid.length > 0) {
+                Hyprland.dispatch("focuswindow class:^(" + aid + ")$");
+            }
         }
-    }
 
     property bool isActive:   openToplevel ? openToplevel.activated : false
     property bool isOpen:     openToplevel !== null
@@ -54,6 +65,16 @@ Item {
 
         let candidates = [rawId];
         let lower = rawId.toLowerCase();
+        
+        let desktopEntry = DesktopEntries.heuristicLookup(rawId);
+        if (!desktopEntry && rawId !== lower) {
+            desktopEntry = DesktopEntries.heuristicLookup(lower);
+        }
+        
+        if (desktopEntry && desktopEntry.icon) {
+            candidates.unshift(desktopEntry.icon);
+        }
+
         if (lower !== rawId) candidates.push(lower);
 
         if (rawId.includes(".")) {
@@ -63,7 +84,7 @@ Item {
         }
 
         if (lower.includes("floorp")) candidates.push("floorp", "ablaze-floorp", "firefox", "browser");
-        if (lower.includes("kitty")) candidates.push("kitty", "terminal", "utilities-terminal");
+        if (lower.includes("kitty")) candidates.push("kitty", "terminal", "utilities-terminal", "system-run");
         if (lower.includes("nautilus")) candidates.push("org.gnome.Nautilus", "nautilus", "system-file-manager", "folder");
         if (lower.includes("gedit") || lower.includes("texteditor")) candidates.push("org.gnome.TextEditor", "text-editor", "gedit");
         if (lower.includes("settings")) candidates.push("preferences-system", "org.gnome.Settings", "gnome-control-center");
@@ -101,31 +122,33 @@ Item {
     }
 
     IconImage {
-        id: appIcon
-        anchors.centerIn: parent
-        width: 26; height: 26
-        source: root.resolvedIconPath
-        smooth: true
-        scale: itemArea.containsMouse ? 1.1 : 1.0
-        visible: backer.status === Image.Ready
-        Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-    }
-
-    Rectangle {
-        anchors.centerIn: parent
-        width: 26; height: 26; radius: 8
-        color: ColorService.accentDim
-        visible: appIcon.backer.status !== Image.Ready
-        
-        Text {
+            id: appIcon
             anchors.centerIn: parent
-            text: displayName.length > 0 ? displayName[0].toUpperCase() : "?"
-            color: ColorService.accent
-            font.family: ColorService.fontMain
-            font.bold: true
-            font.pixelSize: 13
+            width: 26; height: 26
+            source: root.resolvedIconPath
+            smooth: true
+            scale: itemArea.containsMouse ? 1.1 : 1.0
+   
+            visible: status === Image.Ready 
+            Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
         }
-    }
+    
+        Rectangle {
+            anchors.centerIn: parent
+            width: 26; height: 26; radius: 8
+            color: ColorService.accentDim
+       
+            visible: appIcon.status !== Image.Ready 
+            
+            Text {
+                anchors.centerIn: parent
+                text: displayName.length > 0 ? displayName[0].toUpperCase() : "?"
+                color: ColorService.accent
+                font.family: ColorService.fontMain
+                font.bold: true
+                font.pixelSize: 13
+            }
+        }
 
     Rectangle {
         anchors.bottom: parent.bottom
@@ -164,28 +187,28 @@ Item {
     signal requestContextMenu(real mouseX, real mouseY)
 
     MouseArea {
-        id: itemArea
-        anchors.fill: parent
-        hoverEnabled: true
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-        cursorShape: Qt.PointingHandCursor
-
-        onClicked: (mouse) => {
-            if (mouse.button === Qt.RightButton) {
-                root.requestContextMenu(mouse.x, mouse.y);
-                return;
-            }
-            if (openToplevel) {
-                if (isActive) {
-                    Hyprland.dispatch("togglespecialworkspace");
-                } else {
-                    root.activateWindow();
+            id: itemArea
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            cursorShape: Qt.PointingHandCursor
+    
+            onPressed: (mouse) => {
+                if (mouse.button === Qt.RightButton) {
+                    root.requestContextMenu(mouse.x, mouse.y);
+                    return;
                 }
-            } else if (pinData && pinData.exec) {
-                let p = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
-                p.command = ["sh", "-c", pinData.exec];
-                p.running = true;
+                if (openToplevel) {
+                    if (isActive) {
+                        Hyprland.dispatch("workspace", "empty");
+                    } else {
+                        root.activateWindow();
+                    }
+                } else if (pinData && pinData.exec) {
+                    let p = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
+                    p.command = ["sh", "-c", pinData.exec];
+                    p.running = true;
+                }
             }
         }
-    }
 }
