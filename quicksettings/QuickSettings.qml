@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pipewire
+import Quickshell.Services.Notifications 
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -89,9 +90,6 @@ PopupWindow {
         border.width: 1
         Behavior on color { ColorAnimation { duration: 400 } }
 
-        // =========================================================
-        // VIEW 1: MAIN ANDROID 16 QUICK SETTINGS PANEL
-        // =========================================================
         ColumnLayout {
             id: mainLayout
             anchors.left: parent.left
@@ -333,78 +331,75 @@ PopupWindow {
                 }
             }
 
-                                   Rectangle {
-                                       id: notifHistoryMenu
-                                       Layout.fillWidth: true
-                                       height: 64
-                                       radius: 20
-                                       color: ColorService.bgElevated
-                                       border.color: Qt.rgba(1, 1, 1, 0.06)
-                                       border.width: 1
-                       
-                                       RowLayout {
-                                           anchors.fill: parent
-                                           anchors.margins: 10
-                                           spacing: 12
-                       
-                                           Rectangle {
-                                               width: 44; height: 44; radius: 22
-                                               color: notifList.count > 0 ? Qt.alpha(ColorService.accent, 0.15) : Qt.rgba(1, 1, 1, 0.08)
-                                               Text {
-                                                   anchors.centerIn: parent
-                                                   text: "󰎟" 
-                                                   font.family: Theme.fontIcon
-                                                   font.pixelSize: 20
-                                                   color: notifList.count > 0 ? ColorService.accent : ColorService.textPrimary
-                                               }
-                                           }
-                       
-                                           Column {
-                                               Layout.fillWidth: true
-                                               spacing: 2
-                                               Text {
-                                                   text: "Notification History"
-                                                   color: ColorService.textPrimary
-                                                   font.family: Theme.fontMain
-                                                   font.bold: true
-                                                   font.pixelSize: 13
-                                               }
-                                               Text {
-                                                   text: notifList.count > 0 
-                                                         ? notifList.count + " active notification(s)"
-                                                         : "No new notifications"
-                                                   color: ColorService.textSecondary
-                                                   font.family: Theme.fontMain
-                                                   font.pixelSize: 11
-                                               }
-                                           }
-                       
-                                           Rectangle {
-                                               width: 32; height: 44; radius: 16
-                                               color: nhArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
-                                               Text {
-                                                   anchors.centerIn: parent
-                                                   text: "❯"
-                                                   font.family: Theme.fontMain
-                                                   font.pixelSize: 11
-                                                   font.bold: true
-                                                   color: ColorService.textSecondary
-                                               }
-                                               MouseArea {
-                                                   id: nhArea
-                                                   anchors.fill: parent
-                                                   hoverEnabled: true
-                                                   cursorShape: Qt.PointingHandCursor
-                                                   onClicked: qsRoot.currentView = "notifications"
-                                               }
-                                           }
-                                       }
-                                   }
+            Rectangle {
+                id: notifHistoryMenu
+                Layout.fillWidth: true
+                height: 64
+                radius: 20
+                color: ColorService.bgElevated
+                border.color: Qt.rgba(1, 1, 1, 0.06)
+                border.width: 1
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    spacing: 12
+
+                    Rectangle {
+                        width: 44; height: 44; radius: 22
+                        color: NotificationService.trackedNotifications.values.length > 0 ? Qt.alpha(ColorService.accent, 0.15) : Qt.rgba(1, 1, 1, 0.08)
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰎟" 
+                            font.family: Theme.fontIcon
+                            font.pixelSize: 20
+                            color: NotificationService.trackedNotifications.values.length > 0 ? ColorService.accent : ColorService.textPrimary
+                        }
+                    }
+
+                    Column {
+                        Layout.fillWidth: true
+                        spacing: 2
+                        Text {
+                            text: "Notification History"
+                            color: ColorService.textPrimary
+                            font.family: Theme.fontMain
+                            font.bold: true
+                            font.pixelSize: 13
+                        }
+                        Text {
+                            text: NotificationService.trackedNotifications.values.length > 0 
+                                  ? NotificationService.trackedNotifications.values.length + " active notification(s)"
+                                  : "No new notifications"
+                            color: ColorService.textSecondary
+                            font.family: Theme.fontMain
+                            font.pixelSize: 11
+                        }
+                    }
+
+                    Rectangle {
+                        width: 32; height: 44; radius: 16
+                        color: nhArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+                        Text {
+                            anchors.centerIn: parent
+                            text: "❯"
+                            font.family: Theme.fontMain
+                            font.pixelSize: 11
+                            font.bold: true
+                            color: ColorService.textSecondary
+                        }
+                        MouseArea {
+                            id: nhArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: qsRoot.currentView = "notifications"
+                        }
+                    }
+                }
+            }
         }
 
-        // =========================================================
-        // VIEW 2: WI-FI NETWORKS SUB-PAGE
-        // =========================================================
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 18
@@ -597,9 +592,6 @@ PopupWindow {
             }
         }
 
-        // =========================================================
-        // VIEW 3: BLUETOOTH DEVICES SUB-PAGE
-        // =========================================================
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 18
@@ -680,9 +672,6 @@ PopupWindow {
             }
         }
 
-        // =========================================================
-        // VIEW 4: AUDIO DEVICES SUB-PAGE
-        // =========================================================
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 18
@@ -801,9 +790,6 @@ PopupWindow {
             }
         }
 
-        // =========================================================
-        // VIEW 5: NOTIFICATIONS SUB-PAGE
-        // =========================================================
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 18
@@ -828,47 +814,26 @@ PopupWindow {
                     font.bold: true
                     Layout.fillWidth: true
                 }
-                                Text {
-                                    visible: notifList.count > 0
-                                    text: "Clear all"
-                                    color: ColorService.accent
-                                    font.family: Theme.fontMain
-                                    font.pixelSize: 12
-                                    font.bold: true
+
+                Text {
+                    visible: NotificationService.trackedNotifications.values.length > 0
+                    text: "Clear all"
+                    color: ColorService.accent
+                    font.family: Theme.fontMain
+                    font.pixelSize: 12
+                    font.bold: true
                 
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            const list = NotificationService.trackedNotifications;
-                                        
-                                            if (typeof NotificationService.clearAll === 'function') {
-                                                NotificationService.clearAll();
-                                                return;
-                                            }
-                
-                                            if (list.length !== undefined) {
-                                                let itemsToDismiss = [];
-                                                for (let i = 0; i < list.length; i++) {
-                                                    itemsToDismiss.push(list[i]);
-                                                }
-                                                for (let i = 0; i < itemsToDismiss.length; i++) {
-                                                    if (itemsToDismiss[i] && typeof itemsToDismiss[i].dismiss === 'function') {
-                                                        itemsToDismiss[i].dismiss();
-                                                    }
-                                                }
-                                            } 
-                                            else if (typeof list.get === 'function') {
-                                                for (let i = list.count - 1; i >= 0; i--) {
-                                                    let item = list.get(i);
-                                                    if (item && typeof item.dismiss === 'function') {
-                                                        item.dismiss();
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            let items = NotificationService.trackedNotifications.values;
+                            for (let i = items.length - 1; i >= 0; i--) {
+                                items[i].tracked = false; 
+                            }
+                        }
+                    }
+                }
             }
 
             ScrollView {
@@ -878,9 +843,10 @@ PopupWindow {
                 clip: true
 
                 ListView {
-                id: notifList
+                    id: notifList
                     width: notifScroll.width
                     height: notifScroll.height
+                    
                     model: NotificationService.trackedNotifications
                     spacing: 8
                     
@@ -921,31 +887,33 @@ PopupWindow {
                                     font.bold: true
                                     elide: Text.ElideRight
                                 }
-                                  Rectangle {
-                                       width: 28; height: 28; radius: 14
-                                       color: closeArea.containsMouse ? Qt.rgba(1, 1, 1, 0.15) : Qt.rgba(1, 1, 1, 0.08)
-                                       Behavior on color { ColorAnimation { duration: 150 } }
-                                       Text {
-                                            anchors.centerIn: parent
-                                         text: "󰅖"
-                                          color: closeArea.containsMouse ? ColorService.textPrimary : ColorService.textSecondary
-                                         font.family: Theme.fontMain
-                                         font.pixelSize: 13
-                                         font.bold: true
-                                       }
-                              
-                                      MouseArea {
-                                             id: closeArea
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                             onClicked: {
-                                                  if (notif && typeof notif.dismiss === 'function') {
-                                                      notif.dismiss();
-                                                  }
-                                             }
-                                       }
-                                 }
+
+                                Rectangle {
+                                    width: 28; height: 28; radius: 14
+                                    color: closeArea.containsMouse ? Qt.rgba(1, 1, 1, 0.15) : Qt.rgba(1, 1, 1, 0.08)
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "󰅖"
+                                        color: closeArea.containsMouse ? ColorService.textPrimary : ColorService.textSecondary
+                                        font.family: Theme.fontMain
+                                        font.pixelSize: 13
+                                        font.bold: true
+                                    }
+
+                                    MouseArea {
+                                        id: closeArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (notif) {
+                                                notif.tracked = false; 
+                                            }
+                                        }
+                                    }
+                                }
                             }
 
                             Text {
@@ -975,7 +943,7 @@ PopupWindow {
             }
             
             Text {
-                visible: notifList.count === 0
+                visible: NotificationService.trackedNotifications.values.length === 0
                 text: "No notifications right now."
                 color: ColorService.textSecondary
                 font.family: Theme.fontMain
@@ -985,10 +953,6 @@ PopupWindow {
             }
         }
     }
-
-    // =========================================================
-    // HELPER COMPONENTS (ANDROID 16 MATERIAL EXPRESSIVE STYLES)
-    // =========================================================
 
     component QsIconBtn: Rectangle {
         id: iconBtn
