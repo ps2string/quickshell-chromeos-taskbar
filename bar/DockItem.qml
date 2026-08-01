@@ -14,6 +14,16 @@ Rectangle {
     radius: Theme.radiusMedium
     color: itemArea.containsMouse ? Theme.bgHover : "transparent"
 
+    function getResolvedIconPath(appId) {
+        if (!appId || appId.length === 0) return "";
+        let entry = DesktopEntries.heuristicLookup(appId);
+        if (entry && entry.icon) {
+            let p = Quickshell.iconPath(entry.icon, true);
+            if (p) return p;
+        }
+        return Quickshell.iconPath(appId.toLowerCase(), true);
+    }
+
     Rectangle {
         anchors.centerIn: parent
         width: 32
@@ -25,7 +35,7 @@ Rectangle {
             id: appIcon
             anchors.fill: parent
             anchors.margins: 4
-            source: toplevel ? Quickshell.iconPath(toplevel.appId.toLowerCase(), true) : ""
+            source: toplevel ? dockItemRoot.getResolvedIconPath(toplevel.appId) : ""
             visible: backer.status === Image.Ready
         }
 
