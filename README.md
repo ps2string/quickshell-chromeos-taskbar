@@ -3,7 +3,8 @@ A simple quickshell configuration that aims Android 16 UI like appearance.
 
 > [!NOTE]
 > Strictly speaking, this is a hyprland's only quickshell configuration (for now) so, do not expect it to work outside the environment, you may try, but I won't guarantee a fully functional bar.
-> I haven't implemented a settings GUI app yet, going to have it soon in the future.
+>
+> To add, I haven't implemented a settings GUI app yet, going to have it soon in the future.
 
 
 ## What you'll need (Dependencies)
