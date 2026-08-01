@@ -26,26 +26,30 @@ PanelWindow {
     function openShelfContextMenu(item, posX) {
         requestShelfContextMenu(item, posX);
     }
-
     property string currentTime: "00:00"
     property string currentDate: "Jan 1"
     property string currentDay:  "Mon"
     property bool   showSeconds: false
 
     function getAppId(toplevel) {
-        if (!toplevel) return "";
-        if (toplevel.lastIpcObject) {
-            let cls = toplevel.lastIpcObject["class"];
-            if (cls && typeof cls === "string" && cls.length > 0) return cls;
-            let iCls = toplevel.lastIpcObject["initialClass"];
-            if (iCls && typeof iCls === "string" && iCls.length > 0) return iCls;
+            if (!toplevel) return "";
+            
+            if (toplevel.wayland && toplevel.wayland.appId) return toplevel.wayland.appId;
+    
+            if (toplevel.lastIpcObject) {
+                let cls = toplevel.lastIpcObject["class"];
+                if (cls && typeof cls === "string" && cls.length > 0) return cls;
+                let iCls = toplevel.lastIpcObject["initialClass"];
+                if (iCls && typeof iCls === "string" && iCls.length > 0) return iCls;
+            }
+            
+            if (toplevel.appId && typeof toplevel.appId === "string" && toplevel.appId.length > 0)
+                return toplevel.appId;
+            if (toplevel.title && typeof toplevel.title === "string")
+                return toplevel.title;
+                
+            return "";
         }
-        if (toplevel.appId && typeof toplevel.appId === "string" && toplevel.appId.length > 0)
-            return toplevel.appId;
-        if (toplevel.title && typeof toplevel.title === "string")
-            return toplevel.title;
-        return "";
-    }
 
     function isWindowValidAndVisible(t) {
         if (!t) return false;
@@ -291,7 +295,7 @@ PanelWindow {
         }
 
         // =========================================================
-        // CENTER PILL: APP DOCK
+        // CENTER PILL: EXPRESSIVE APP DOCK
         // =========================================================
         Rectangle {
             id: centerSection
@@ -386,6 +390,7 @@ PanelWindow {
                     id: statusRow
                     anchors.centerIn: parent
                     spacing: 10
+
                     RowLayout {
                         spacing: 8
                         Layout.alignment: Qt.AlignVCenter
