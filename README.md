@@ -14,7 +14,8 @@ A simple quickshell configuration that aims Android 16 UI like appearance.
 5. Bluetooth daemon (optional)
 6. Matugen (optional)
 7. Papirus icon theme
-8. ~~Any notification daemon (swaync, dunst, mako, etc)~~
+8. Hyprshutdown
+9. ~~Any notification daemon (swaync, dunst, mako, etc)~~
 
 ## What you need to do to get this shell working?
 1. First, go to the preferred directory to clone this repository (i.e Downloads).
@@ -68,15 +69,17 @@ target launcher
 - `close` closes the launcher (`qs -p ~/.config/quickshell ipc call launcher close`)
 
 ## Known Bugs:
-- Clicking on running apps doesn't open the specific app
-- Icons on running apps doesn't show what app is it (therefore unable to pin it without causing another bug)
-- Pinning on running apps (that uses its title as the icon) are discouraged cause you can't remove it once you've pinned it (unless you just delete its entry inside `~/.config/quickshell/pins.json`)
-- Some apps even when fully closed still leave behind the app icons text (for some reason, I'm still trying to fix it at the moment)
+- ~~Clicking on running apps doesn't open the specific app~~
+- ~~Icons on running apps doesn't show what app is it (therefore unable to pin it without causing another bug)~~
+- ~~Pinning on running apps (that uses its title as the icon) are discouraged cause you can't remove it once you've pinned it (unless you just delete its entry inside `~/.config/quickshell/pins.json`)~~
+- ~~Some apps even when fully closed still leave behind the app icons text (for some reason, I'm still trying to fix it at the moment)~~
+- Notification clash/race condition between notificationCenter and notificationPopup
 
 ## Previews
 ---
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/b1596bf1-634c-46c5-bccc-6f746777a4c5" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/8ed3a593-a774-4d0e-972d-b81031e36638" />
 
 ---
 
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/bc1d1b02-41d4-41fa-b625-d1a633e1fba0" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/9f65a9f9-a332-4368-a28e-17f35a39006c" />
+
