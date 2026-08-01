@@ -75,6 +75,7 @@ target launcher
 - ~~Pinning on running apps (that uses its title as the icon) are discouraged cause you can't remove it once you've pinned it (unless you just delete its entry inside `~/.config/quickshell/pins.json`)~~
 - ~~Some apps even when fully closed still leave behind the app icons text (for some reason, I'm still trying to fix it at the moment)~~
 - ~~Notification clash/race condition between notificationCenter and notificationPopup~~
+- ~~Notification center clear all button doesn't work~~
 - Clicking while the QuickSettings still being animated pops out specialWorkspace
 
 ## Previews
