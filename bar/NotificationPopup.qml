@@ -48,12 +48,7 @@ PanelWindow {
     }
 
     function removePopup(targetNotif) {
-        let list = popupWindow.popups.slice();
-        let idx = list.indexOf(targetNotif);
-        if (idx !== -1) {
-            list.splice(idx, 1);
-            popupWindow.popups = list;
-        }
+        popupWindow.popups = popupWindow.popups.filter(n => n !== null && n !== targetNotif);
     }
 
     ColumnLayout {
@@ -68,6 +63,14 @@ PanelWindow {
                 id: toastDelegate
                 required property var modelData
                 property var notif: modelData
+
+                Connections {
+                    target: notif
+                    ignoreUnknownSignals: true
+                    function onClosed(reason) {
+                        popupWindow.removePopup(notif);
+                    }
+                }
 
                 Layout.fillWidth: true
                 implicitHeight: toastContent.implicitHeight + 24
