@@ -10,14 +10,13 @@ Item {
     id: root
     anchors.fill: parent
 
-    property string wallpaperDir: "/home/" + (Quickshell.env("USER") || "zafran") + "/Pictures/Wallpapers"
+    property string wallpaperDir: "/home/" + (Quickshell.env("USER") || "user") + "/Pictures/Wallpapers"
     property var    wallpaperFiles: []
     property int    selectedIndex: -1
     property string currentWallpaper: ""
     property bool   isApplying: false
     property string statusMsg: ""
     property bool   statusOk: true
-
 
     Process {
         id: lsProc
@@ -50,25 +49,25 @@ Item {
         }
     }
 
-    Process {
-        id: applyProc
-        stdout: StdioCollector { id: applyStdout }
-        stderr: StdioCollector { id: applyStderr }
-        onRunningChanged: {
-            if (!running) {
-                root.isApplying = false;
-                if (exitCode === 0) {
-                    root.statusMsg = "✓ Applied!";
-                    root.statusOk = true;
-                } else {
-                    let err = applyStderr.text.trim() || applyStdout.text.trim();
-                    root.statusMsg = "✗ Failed: " + (err.length > 0 ? err.substring(0, 80) : "exit " + exitCode);
-                    root.statusOk = false;
-                }
-                statusClearTimer.restart();
-            }
-        }
-    }
+       Process {
+           id: applyProc
+           stdout: StdioCollector { id: applyStdout }
+           stderr: StdioCollector { id: applyStderr }
+           
+           onExited: (exitCode, exitStatus) => {
+               root.isApplying = false;
+               
+               if (exitCode === 0) {
+                   root.statusMsg = "✓ Applied!";
+                   root.statusOk = true;
+               } else {
+                   let err = applyStderr.text.trim() || applyStdout.text.trim();
+                   root.statusMsg = "✗ Failed: " + (err.length > 0 ? err.substring(0, 80) : "exit " + exitCode);
+                   root.statusOk = false;
+               }
+               statusClearTimer.restart();
+           }
+       }
 
     Process {
         id: openDirProc
@@ -97,7 +96,7 @@ Item {
         if (idx >= 0) root.selectedIndex = idx;
         applyProc.command = [
             "python3",
-            "/home/" + (Quickshell.env("USER") || "zafran") + "/theme-manager.py",
+            ".config/quickshell/theme-manager.py",
             "--apply", path
         ];
         applyProc.running = true;
@@ -151,10 +150,11 @@ Item {
                     anchors.fill: parent
                     source: root.currentWallpaper.length > 0 ? "file://" + root.currentWallpaper : ""
                     fillMode: Image.PreserveAspectCrop
-                    smooth: false 
+                    smooth: false
                     asynchronous: true
                     sourceSize: Qt.size(700, 120)
                 }
+
                 Rectangle {
                     anchors.bottom: parent.bottom
                     anchors.left: parent.left
@@ -283,6 +283,7 @@ Item {
                                 onClicked: { if (!lsProc.running) lsProc.running = true; }
                             }
                         }
+
                         Rectangle {
                             implicitWidth: openFolderTxt.implicitWidth + 20
                             height: 30; radius: 15
@@ -351,7 +352,7 @@ Item {
                                 readonly property bool isSelected: root.selectedIndex === index
 
                                 width: (wallGrid.width - wallGrid.columnSpacing * (wallGrid.columns - 1)) / wallGrid.columns
-                                height: width * 0.5625 
+                                height: width * 0.5625
                                 radius: 12
                                 color: "transparent"
                                 border.color: isCurrentWp
@@ -365,9 +366,10 @@ Item {
                                     anchors.margins: parent.border.width
                                     source: "file://" + filePath
                                     fillMode: Image.PreserveAspectCrop
-                                    smooth: false 
+                                    smooth: false
                                     asynchronous: true
                                     sourceSize: Qt.size(220, 124)
+
                                     opacity: status === Image.Ready ? 1.0 : 0.0
                                     Behavior on opacity {
                                         NumberAnimation { duration: 150 }
@@ -533,7 +535,6 @@ Item {
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: {
-                                       
                                         matugenProc.command = ["matugen", "color", "hex", modelData.color];
                                         if (!matugenProc.running) matugenProc.running = true;
                                     }
