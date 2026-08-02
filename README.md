@@ -69,14 +69,9 @@ target launcher
 - `toggle` opens/closes the launcher (`qs -p ~/.config/quickshell ipc call launcher toggle`)
 - `close` closes the launcher (`qs -p ~/.config/quickshell ipc call launcher close`)
 
-## Known Bugs:
-- ~~Clicking on running apps doesn't open the specific app~~
-- ~~Icons on running apps doesn't show what app is it (therefore unable to pin it without causing another bug)~~
-- ~~Pinning on running apps (that uses its title as the icon) are discouraged cause you can't remove it once you've pinned it (unless you just delete its entry inside `~/.config/quickshell/pins.json`)~~
-- Some apps even when fully closed still leave behind the app icons text (for some reason, I'm still trying to fix it at the moment) (Affected apps like EasyEDA Pro)
-- ~~Notification clash/race condition between notificationCenter and notificationPopup~~
-- ~~Notification center clear all button doesn't work~~
-- Clicking while the QuickSettings still being animated pops out specialWorkspace
+## Important notes:
+- Make sure your wallpapers are saved inside `~/Pictures/Wallpapers` as that's the most reliable path I've tested to work best.
+- You can change it by using `Open Folder` button, but I'm not guaranteeing it to work properly as of now.
 
 ## Previews
 ---
