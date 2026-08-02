@@ -2,21 +2,21 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 
-// Manages pinned applications for the shelf dock.
-// Pins are persisted in ~/.config/quickshell/pins.json
-
 pragma Singleton
 
 Item {
     id: root
-
-    // List of { appId, name, exec, icon } objects
     property var pins: []
+    readonly property string _pinsFile: Quickshell.env("HOME") + "/.config/quickshell/pins.json"
 
-    readonly property string _pinsFile: "/home/zafran/.config/quickshell/pins.json"
+    Process {
+        id: saveProc
+    }
 
     readonly property var _defaults: [
-        { appId: "floorp",   name: "Files", exec: "nautilus",   icon: "nautilus" },
+        { appId: "floorp",   name: "Floorp Browser", exec: "floorp",   icon: "floorp" },
+        { appId: "kitty",    name: "Terminal",       exec: "kitty",    icon: "kitty" },
+        { appId: "obsidian", name: "Obsidian",       exec: "obsidian", icon: "obsidian" }
     ]
 
     Process {
@@ -50,10 +50,10 @@ Item {
     }
 
     function _save() {
-        let proc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
+        if (saveProc.running) return;
         let json = JSON.stringify(root.pins, null, 2);
-        proc.command = ["bash", "-c", `echo '${json.replace(/'/g, "'\\''")}' > '${root._pinsFile}'`];
-        proc.running = true;
+        saveProc.command = ["bash", "-c", `printf '%s' '${json.replace(/'/g, "'\\''")}' > '${root._pinsFile}'`];
+        saveProc.running = true;
     }
 
     function isPinned(appId) {
@@ -68,9 +68,10 @@ Item {
 
     function pin(appId, name, exec, icon) {
         if (!isPinned(appId)) {
-            let cleanExec = (exec || "").replace(/%[uUfFiick]/g, "").trim();
+            let cleanExec  = (exec  || "").replace(/%[uUfFiick]/g, "").trim();
             let cleanAppId = (appId || "").replace(/\.desktop$/, "");
-            let updated = [...root.pins, { appId: cleanAppId, name: name || cleanAppId, exec: cleanExec || cleanAppId, icon: icon || cleanAppId }];
+            let cleanIcon  = (icon  || cleanAppId).replace(/^image:\/\/icon\//, "");
+            let updated = [...root.pins, { appId: cleanAppId, name: name || cleanAppId, exec: cleanExec || cleanAppId, icon: cleanIcon }];
             root.pins = updated;
             _save();
         }
@@ -84,6 +85,18 @@ Item {
             let pexec = (p.exec || "").toLowerCase();
             return pid !== id && !pexec.includes(id);
         });
+        _save();
+    }
+
+    function reorderPin(fromIndex, toIndex) {
+        if (fromIndex < 0 || fromIndex >= root.pins.length) return;
+        if (toIndex < 0 || toIndex >= root.pins.length) return;
+        if (fromIndex === toIndex) return;
+
+        let newPins = [...root.pins];
+        let item = newPins.splice(fromIndex, 1)[0];
+        newPins.splice(toIndex, 0, item);
+        root.pins = newPins;
         _save();
     }
 }
