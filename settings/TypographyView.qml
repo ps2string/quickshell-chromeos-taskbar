@@ -17,7 +17,6 @@ ScrollView {
 
         Item { height: 4 }
 
-        // Header
         ColumnLayout {
             spacing: 4
             Layout.fillWidth: true
@@ -26,7 +25,6 @@ ScrollView {
             Text { text: "System fonts, icon font families, and UI scaling"; font.family: Theme.fontMain; font.pixelSize: 13; color: ColorService.textSecondary }
         }
 
-        // --- Font Cards ---
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: fontCol.implicitHeight + 28
@@ -39,7 +37,6 @@ ScrollView {
                 anchors.margins: 14
                 spacing: 16
 
-                // Main Font
                 RowLayout {
                     Layout.fillWidth: true; spacing: 12
                     Rectangle { width: 36; height: 36; radius: 18; color: Qt.alpha(ColorService.accent, 0.15)
@@ -60,7 +57,6 @@ ScrollView {
 
                 Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.06) }
 
-                // Icon Font
                 RowLayout {
                     Layout.fillWidth: true; spacing: 12
                     Rectangle { width: 36; height: 36; radius: 18; color: Qt.alpha(ColorService.accent, 0.15)
@@ -81,7 +77,6 @@ ScrollView {
 
                 Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.06) }
 
-                // UI Scale
                 RowLayout {
                     Layout.fillWidth: true; spacing: 12
                     Rectangle { width: 36; height: 36; radius: 18; color: Qt.alpha(ColorService.accent, 0.15)
