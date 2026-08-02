@@ -2,6 +2,8 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Services.Notifications 
+import Quickshell.Services.SystemTray
+import Quickshell.Widgets
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -326,6 +328,74 @@ PopupWindow {
                                  : SystemService.isCharging ? ColorService.success
                                  : ColorService.accent
                             Behavior on width { NumberAnimation { duration: 300 } }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                id: backgroundAppsMenu
+                Layout.fillWidth: true
+                height: 64
+                radius: 20
+                color: ColorService.bgElevated
+                border.color: Qt.rgba(1, 1, 1, 0.06)
+                border.width: 1
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    spacing: 12
+
+                    Rectangle {
+                        width: 44; height: 44; radius: 22
+                        color: SystemTray.items.values.length > 0 ? Qt.alpha(ColorService.accent, 0.15) : Qt.rgba(1, 1, 1, 0.08)
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰍜"
+                            font.family: Theme.fontIcon
+                            font.pixelSize: 20
+                            color: SystemTray.items.values.length > 0 ? ColorService.accent : ColorService.textPrimary
+                        }
+                    }
+
+                    Column {
+                        Layout.fillWidth: true
+                        spacing: 2
+                        Text {
+                            text: "Background Apps"
+                            color: ColorService.textPrimary
+                            font.family: Theme.fontMain
+                            font.bold: true
+                            font.pixelSize: 13
+                        }
+                        Text {
+                            text: SystemTray.items.values.length > 0 
+                                  ? SystemTray.items.values.length + " active app(s)"
+                                  : "No background apps"
+                            color: ColorService.textSecondary
+                            font.family: Theme.fontMain
+                            font.pixelSize: 11
+                        }
+                    }
+
+                    Rectangle {
+                        width: 32; height: 44; radius: 16
+                        color: trayArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+                        Text {
+                            anchors.centerIn: parent
+                            text: "❯"
+                            font.family: Theme.fontMain
+                            font.pixelSize: 11
+                            font.bold: true
+                            color: ColorService.textSecondary
+                        }
+                        MouseArea {
+                            id: trayArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: qsRoot.currentView = "tray"
                         }
                     }
                 }
@@ -953,6 +1023,144 @@ PopupWindow {
             }
         }
     }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+            spacing: 12
+            visible: qsRoot.currentView === "tray"
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                QsIconBtn {
+                    icon: "󰅁"
+                    tooltip: "Back"
+                    onAct: qsRoot.currentView = "main"
+                }
+
+                Text {
+                    text: "Background Apps"
+                    color: ColorService.textPrimary
+                    font.family: Theme.fontMain
+                    font.pixelSize: 16
+                    font.bold: true
+                    Layout.fillWidth: true
+                }
+            }
+
+            ScrollView {
+                id: trayScroll
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+
+                ColumnLayout {
+                    width: trayScroll.width
+                    spacing: 6
+
+                    Repeater {
+                        model: SystemTray.items
+
+                        delegate: Rectangle {
+                            id: trayItemDelegate
+                            required property var modelData
+
+                            Layout.fillWidth: true
+                            height: 54
+                            radius: 16
+                            color: itemMouseArea.containsMouse ? ColorService.bgHover : ColorService.bgElevated
+                            border.color: "transparent"
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 12
+
+                                IconImage {
+                                    width: 24
+                                    height: 24
+                                    source: modelData.icon
+                                }
+
+                                Column {
+                                    Layout.fillWidth: true
+                                    spacing: 2
+                                    Text {
+                                        width: parent.width
+                                        text: modelData.title !== "" ? modelData.title : (modelData.id !== "" ? modelData.id : "Unknown App")
+                                        color: ColorService.textPrimary
+                                        font.family: Theme.fontMain
+                                        font.pixelSize: 13
+                                        font.bold: true
+                                        elide: Text.ElideRight
+                                    }
+                                    Text {
+                                        text: modelData.tooltipTitle !== "" ? modelData.tooltipTitle : "Background Service"
+                                        color: ColorService.textSecondary
+                                        font.family: Theme.fontMain
+                                        font.pixelSize: 11
+                                        elide: Text.ElideRight
+                                    }
+                                }
+                            }
+
+                            QsMenuAnchor {
+                                id: menuAnchor
+                                menu: modelData.menu
+                                anchor {
+                                    edges: Edges.Right
+                                    gravity: Edges.Bottom | Edges.Right
+                                }
+                            }
+
+                            MouseArea {
+                                id: itemMouseArea
+                                anchors.fill: parent
+                                acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+
+                                onClicked: mouse => {
+                                    if (mouse.button === Qt.RightButton) {
+                                        if (modelData.menu) {
+                                          
+                                            menuAnchor.anchor.item = trayItemDelegate;
+                                            menuAnchor.open();
+                                        } else if (modelData.hasMenu) {
+                                            let win = qsRoot.Window.window;
+                                            if (win) {
+                                                let pos = itemMouseArea.mapToItem(null, mouse.x, mouse.y);
+                                                modelData.display(win, pos.x, pos.y);
+                                            }
+                                        } else {
+                                            modelData.secondaryActivate();
+                                        }
+                                    } else if (mouse.button === Qt.LeftButton) {
+                                        modelData.activate();
+                                        qsRoot.isOpen = false;
+                                    } else if (mouse.button === Qt.MiddleButton) {
+                                        modelData.secondaryActivate();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Text {
+                visible: SystemTray.items.values.length === 0
+                text: "No apps running in the background."
+                color: ColorService.textSecondary
+                font.family: Theme.fontMain
+                font.pixelSize: 13
+                Layout.alignment: Qt.AlignHCenter
+                Layout.topMargin: 20
+            }
+        }
 
     component QsIconBtn: Rectangle {
         id: iconBtn
