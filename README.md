@@ -75,9 +75,8 @@ target launcher
 
 ## Previews
 ---
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/8ed3a593-a774-4d0e-972d-b81031e36638" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/e4b1b38d-dd53-4839-8315-ff15482b3187" />
 
 ---
-
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/9f65a9f9-a332-4368-a28e-17f35a39006c" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/02bbcac4-fcf6-41e1-bd60-d4c7b189813e" />
 
