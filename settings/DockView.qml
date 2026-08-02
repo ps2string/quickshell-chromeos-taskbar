@@ -19,14 +19,12 @@ ScrollView {
 
         Item { height: 4 }
 
-        // Header
         ColumnLayout {
             spacing: 4; Layout.fillWidth: true
             Text { text: "Bar & Dock"; font.family: Theme.fontMain; font.pixelSize: 22; font.bold: true; color: ColorService.textPrimary }
             Text { text: "Configure bottom bar height, dock behavior, icon sizes, and workspace badges"; font.family: Theme.fontMain; font.pixelSize: 13; color: ColorService.textSecondary; wrapMode: Text.WordWrap; Layout.fillWidth: true }
         }
 
-        // --- Dock Toggles Card ---
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: dockCol.implicitHeight + 28
@@ -35,7 +33,6 @@ ScrollView {
             ColumnLayout {
                 id: dockCol; anchors.fill: parent; anchors.margins: 14; spacing: 16
 
-                // Show Unpinned Apps
                 RowLayout {
                     Layout.fillWidth: true; spacing: 12
                     Rectangle { width: 36; height: 36; radius: 18; color: Qt.alpha(ColorService.accent, 0.15)
@@ -50,7 +47,6 @@ ScrollView {
 
                 Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.06) }
 
-                // Expressive Workspace Badges
                 RowLayout {
                     Layout.fillWidth: true; spacing: 12
                     Rectangle { width: 36; height: 36; radius: 18; color: Qt.alpha(ColorService.accent, 0.15)
@@ -65,7 +61,6 @@ ScrollView {
 
                 Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.06) }
 
-                // Show Seconds in Clock
                 RowLayout {
                     Layout.fillWidth: true; spacing: 12
                     Rectangle { width: 36; height: 36; radius: 18; color: Qt.alpha(ColorService.accent, 0.15)
@@ -80,7 +75,6 @@ ScrollView {
             }
         }
 
-        // --- Bar Height Slider ---
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: heightCol.implicitHeight + 28
@@ -153,7 +147,6 @@ ScrollView {
             }
         }
 
-        // --- Pinned Apps Management ---
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: pinsCol.implicitHeight + 28
