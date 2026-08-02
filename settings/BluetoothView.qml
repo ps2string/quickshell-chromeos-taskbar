@@ -17,7 +17,6 @@ ScrollView {
 
         Item { height: 4 }
 
-        // ── Header ─────────────────────────────────────────────────────
         RowLayout {
             Layout.fillWidth: true
             spacing: 14
@@ -56,7 +55,6 @@ ScrollView {
             }
         }
 
-        // ── Bluetooth Master Toggle ────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
             height: 68
@@ -100,7 +98,6 @@ ScrollView {
             }
         }
 
-        // ── Discovered Devices ─────────────────────────────────────────
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 10
@@ -119,7 +116,6 @@ ScrollView {
                     Layout.fillWidth: true
                 }
 
-                // Scan button
                 Rectangle {
                     implicitWidth: scanRow.implicitWidth + 24
                     height: 30; radius: 15
@@ -164,7 +160,6 @@ ScrollView {
                         anchors.margins: 14
                         spacing: 12
 
-                        // Device icon (type-based in future; generic BT for now)
                         Rectangle {
                             width: 38; height: 38; radius: 19
                             color: modelData.connected ? Qt.alpha(ColorService.accent, 0.2) : Qt.rgba(1,1,1,0.07)
@@ -198,7 +193,6 @@ ScrollView {
                             }
                         }
 
-                        // Connect/Disconnect pill
                         Rectangle {
                             implicitWidth: btActionTxt.implicitWidth + 20
                             height: 30; radius: 15
@@ -241,12 +235,11 @@ ScrollView {
                         id: btItemMa
                         anchors.fill: parent
                         hoverEnabled: true
-                        enabled: false // just for hover color
+                        enabled: false
                     }
                 }
             }
 
-            // Empty state
             Rectangle {
                 visible: SystemService.bluetoothDevices.length === 0
                 Layout.fillWidth: true
