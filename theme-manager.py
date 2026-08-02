@@ -6,7 +6,6 @@ import json
 import glob
 import threading
 
-# Require GTK4, Libadwaita, and GdkPixbuf bindings
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('Gdk', '4.0')
@@ -46,7 +45,6 @@ class WallpaperManager(Adw.ApplicationWindow):
         key_controller.connect("key-pressed", self.on_key_pressed)
         self.add_controller(key_controller)
 
-        # Main Layout using Adw.Clamp for responsive, centered design
         self.clamp = Adw.Clamp()
         self.clamp.set_maximum_size(800)
         self.clamp.set_tightening_threshold(600)
@@ -77,12 +75,10 @@ class WallpaperManager(Adw.ApplicationWindow):
         self.dots.set_carousel(self.carousel)
         self.box.append(self.dots)
 
-        # M3 Container Card
         m3_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
         m3_container.set_css_classes(["m3-container"])
         self.box.append(m3_container)
 
-        # Filename Label
         self.filename_label = Gtk.Label(label="No image selected")
         self.filename_label.set_css_classes(["m3-dim-label"])
         self.filename_label.set_wrap(True)
@@ -90,12 +86,11 @@ class WallpaperManager(Adw.ApplicationWindow):
 
         # Action Button
         self.btn_select = Gtk.Button(label="Open Folder")
-        self.btn_select.set_css_classes(["m3-button"]) # Removed suggested-action
+        self.btn_select.set_css_classes(["m3-button"])
         self.btn_select.set_halign(Gtk.Align.CENTER)
         self.btn_select.connect("clicked", self.on_select_clicked)
         m3_container.append(self.btn_select)
 
-        # Status Box (Spinner + Label)
         status_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         status_box.set_halign(Gtk.Align.CENTER)
         
@@ -314,7 +309,7 @@ class WallpaperManager(Adw.ApplicationWindow):
 
     def _apply_texture_with_fade(self, widget, texture):
         widget.set_paintable(texture)
-        widget.add_css_class("loaded") # Triggers CSS opacity transition
+        widget.add_css_class("loaded")
 
     def on_carousel_page_changed(self, carousel, index):
         if self.is_loading or not self.images or index >= len(self.images):
@@ -347,7 +342,6 @@ class WallpaperManager(Adw.ApplicationWindow):
             bg = Image.new("RGBA", img.size, (255, 255, 255))
             img = Image.alpha_composite(bg, img).convert("RGB")
             
-            # Crop slightly to avoid black letterbox borders skewing the color
             width, height = img.size
             crop_margin = int(min(width, height) * 0.1)
             img = img.crop((crop_margin, crop_margin, width - crop_margin, height - crop_margin))
@@ -379,7 +373,7 @@ class WallpaperManager(Adw.ApplicationWindow):
                     if mon_name:
                         subprocess.run(["hyprctl", "hyprpaper", "wallpaper", f"{mon_name}, {image_path}"], check=False)
             except FileNotFoundError:
-                pass # Fail silently if hyprland/hyprpaper isn't running
+                pass
 
             subprocess.run(["matugen", "color", "hex", hex_color], check=True)
 
