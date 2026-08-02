@@ -15,7 +15,6 @@ ScrollView {
     property bool confirmVisible: false
     property string pendingAction: ""
 
-    // Declared process for power actions — avoids Qt.createQmlObject leaks
     Process {
         id: actionProc
     }
@@ -42,21 +41,18 @@ ScrollView {
 
         Item { height: 4 }
 
-        // Header
         ColumnLayout {
             spacing: 4; Layout.fillWidth: true
             Text { text: "Power"; font.family: Theme.fontMain; font.pixelSize: 22; font.bold: true; color: ColorService.textPrimary }
             Text { text: "Shutdown, reboot, sleep, lock, and session options"; font.family: Theme.fontMain; font.pixelSize: 13; color: ColorService.textSecondary }
         }
 
-        // --- Battery Status Card ---
         Rectangle {
             Layout.fillWidth: true; height: 80; radius: 20; color: ColorService.bgSurface
 
             RowLayout {
                 anchors.fill: parent; anchors.margins: 16; spacing: 16
 
-                // Battery icon
                 Rectangle {
                     width: 48; height: 48; radius: 24
                     color: Qt.alpha(SystemService.batteryLevel <= 15 ? ColorService.danger : ColorService.accent, 0.15)
@@ -93,7 +89,6 @@ ScrollView {
                             color: ColorService.textSecondary
                         }
                     }
-                    // Battery bar
                     Rectangle {
                         Layout.fillWidth: true; height: 8; radius: 4
                         color: Qt.rgba(1,1,1,0.12)
@@ -107,7 +102,6 @@ ScrollView {
             }
         }
 
-        // --- Power Actions Grid ---
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: pwrGrid.implicitHeight + 32
@@ -118,7 +112,6 @@ ScrollView {
 
                 Text { text: "Session"; font.family: Theme.fontMain; font.pixelSize: 14; font.bold: true; color: ColorService.textPrimary }
 
-                // Confirm dialog overlay
                 Rectangle {
                     Layout.fillWidth: true
                     visible: root.confirmVisible
@@ -188,7 +181,6 @@ ScrollView {
             }
         }
 
-        // --- Firmware Reboot ---
         Rectangle {
             Layout.fillWidth: true; height: 52; radius: 16
             color: fwMouse.containsMouse ? Qt.alpha("#fdd663", 0.2) : ColorService.bgSurface
