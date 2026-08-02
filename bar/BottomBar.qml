@@ -1,4 +1,3 @@
-// DT: 08:14:31AM-GMT+0800
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -8,7 +7,6 @@ import QtQuick
 import QtQuick.Layouts
 import ".."
 import "../services"
-import "../components"
 
 PanelWindow {
     id: barWindow
@@ -18,7 +16,7 @@ PanelWindow {
     WlrLayershell.exclusiveZone: 64
 
     anchors { bottom: true; left: true; right: true }
-    implicitHeight: 64
+    implicitHeight: DockSettingsService.barHeight
 
     signal toggleLauncher()
     signal toggleQuickSettings()
@@ -27,47 +25,37 @@ PanelWindow {
     function openShelfContextMenu(item, posX) {
         requestShelfContextMenu(item, posX);
     }
+
     property string currentTime: "00:00"
     property string currentDate: "Jan 1"
     property string currentDay:  "Mon"
-    property bool   showSeconds: false
 
     function getAppId(toplevel) {
-            if (!toplevel) return "";
-            
-            if (toplevel.wayland && toplevel.wayland.appId) return toplevel.wayland.appId;
-    
-            if (toplevel.lastIpcObject) {
-                let cls = toplevel.lastIpcObject["class"];
-                if (cls && typeof cls === "string" && cls.length > 0) return cls;
-                let iCls = toplevel.lastIpcObject["initialClass"];
-                if (iCls && typeof iCls === "string" && iCls.length > 0) return iCls;
-            }
-            
-            if (toplevel.appId && typeof toplevel.appId === "string" && toplevel.appId.length > 0)
-                return toplevel.appId;
-            if (toplevel.title && typeof toplevel.title === "string")
-                return toplevel.title;
-                
-            return "";
-        }
+        if (!toplevel) return "";
+        if (toplevel.appId && typeof toplevel.appId === "string" && toplevel.appId.length > 0)
+            return toplevel.appId;
+        if (toplevel.title && typeof toplevel.title === "string")
+            return toplevel.title;
+        return "";
+    }
 
     function isWindowValidAndVisible(t) {
         if (!t) return false;
-        if (t.lastIpcObject) {
-            if (t.lastIpcObject.mapped === false) return false;
-            if (t.lastIpcObject.hidden === true) return false;
-        }
         let aid = barWindow.getAppId(t);
         if (!aid || aid.length === 0) return false;
         return true;
     }
 
-    function getUnpinnedApps() {
-        if (typeof Hyprland === "undefined" || !Hyprland.toplevels || !Hyprland.toplevels.values)
-            return [];
+    property var unpinnedAppsList: []
+    property int toplevelsTick: 0
 
-        let vals = Hyprland.toplevels.values;
+    function updateUnpinnedApps() {
+        if (typeof ToplevelManager === "undefined" || !ToplevelManager.toplevels || !ToplevelManager.toplevels.values) {
+            unpinnedAppsList = [];
+            return;
+        }
+
+        let vals = ToplevelManager.toplevels.values;
         let result = [];
         let seenAppIds = new Set();
 
@@ -81,7 +69,34 @@ PanelWindow {
                 result.push(t);
             }
         }
-        return result;
+
+        let changed = false;
+        if (unpinnedAppsList.length !== result.length) {
+            changed = true;
+        } else {
+            for (let i = 0; i < result.length; i++) {
+                if (unpinnedAppsList[i] !== result[i]) {
+                    changed = true;
+                    break;
+                }
+            }
+        }
+        if (changed) {
+            unpinnedAppsList = result;
+        }
+        toplevelsTick++;
+    }
+
+    Component.onCompleted: {
+        updateUnpinnedApps();
+    }
+
+    Timer {
+        id: unpinnedAppsTimer
+        interval: 500
+        running: true
+        repeat: true
+        onTriggered: barWindow.updateUnpinnedApps()
     }
 
     function findMatchingToplevel(pinData) {
@@ -90,10 +105,10 @@ PanelWindow {
         let exec = (pinData.exec || "").toLowerCase();
         let icon = (pinData.icon || "").toLowerCase();
 
-        if (typeof Hyprland === "undefined" || !Hyprland || !Hyprland.toplevels || !Hyprland.toplevels.values)
+        if (typeof ToplevelManager === "undefined" || !ToplevelManager || !ToplevelManager.toplevels || !ToplevelManager.toplevels.values)
             return null;
 
-        let vals = Hyprland.toplevels.values;
+        let vals = ToplevelManager.toplevels.values;
         for (let i = 0; i < vals.length; i++) {
             let t = vals[i];
             if (!isWindowValidAndVisible(t)) continue;
@@ -126,7 +141,7 @@ PanelWindow {
 
     Process {
         id: clockProc
-        command: ["date", "+%r|%B %D|%A"]
+        command: ["date", DockSettingsService.showSeconds ? "+%T|%B %D|%A" : "+%R|%B %D|%A"]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {
@@ -139,11 +154,24 @@ PanelWindow {
             }
         }
     }
-    Timer { interval: 10000; running: true; repeat: true; onTriggered: clockProc.running = true }
+    Connections {
+        target: DockSettingsService
+        function onShowSecondsChanged() { clockProc.running = true; }
+    }
+    Timer { interval: DockSettingsService.showSeconds ? 1000 : 10000; running: true; repeat: true; onTriggered: clockProc.running = true }
+
+    Connections {
+        target: ToplevelManager
+        function onActiveToplevelChanged() {
+            barWindow.updateUnpinnedApps();
+        }
+    }
+
 
     Connections {
         target: Hyprland
         function onRawEvent(event) {
+            barWindow.updateUnpinnedApps();
             if (event.name === "wallpaper") {
                 let data = event.parse(2);
                 let wp = data.length >= 2 ? data[1] : "";
@@ -170,9 +198,6 @@ PanelWindow {
         anchors.rightMargin: 16
         anchors.bottomMargin: 8
 
-        // =========================================================
-        // LEFT PILL: LAUNCHER & WORKSPACES
-        // =========================================================
         Rectangle {
             id: leftSection
             anchors.left: parent.left
@@ -256,7 +281,7 @@ PanelWindow {
                                 return fw ? fw.id === wsId : false;
                             }
 
-                            implicitWidth: isActive ? wsText.implicitWidth + 24 : 32
+                            implicitWidth: (isActive && DockSettingsService.expressiveWorkspaces) ? wsText.implicitWidth + 24 : 32
                             height: 32
                             radius: 16
                             anchors.verticalCenter: parent.verticalCenter
@@ -274,7 +299,7 @@ PanelWindow {
                             Text {
                                 id: wsText
                                 anchors.centerIn: parent
-                                text: isActive ? "Desk " + wsId : wsId.toString()
+                                text: (isActive && DockSettingsService.expressiveWorkspaces) ? "Desk " + wsId : wsId.toString()
                                 color: isActive ? ColorService.bgBase : ColorService.textPrimary
                                 font.family: Theme.fontMain
                                 font.pixelSize: 12
@@ -295,9 +320,6 @@ PanelWindow {
             }
         }
 
-        // =========================================================
-        // CENTER PILL: EXPRESSIVE APP DOCK
-        // =========================================================
         Rectangle {
             id: centerSection
             anchors.centerIn: parent
@@ -318,7 +340,10 @@ PanelWindow {
                     delegate: ShelfItem {
                         id: pinnedItem
                         pinData: modelData
-                        openToplevel: barWindow.findMatchingToplevel(modelData)
+                        openToplevel: {
+                            let _ = barWindow.toplevelsTick;
+                            return barWindow.findMatchingToplevel(modelData);
+                        }
                         onRequestContextMenu: (mx, my) => {
                             let mapped = pinnedItem.mapToItem(barContent, mx, my);
                             barWindow.openShelfContextMenu(pinnedItem, mapped.x);
@@ -328,7 +353,7 @@ PanelWindow {
 
                 Item {
                     id: dockPipeSeparator
-                    property bool hasUnpinned: barWindow.getUnpinnedApps().length > 0
+                    property bool hasUnpinned: barWindow.unpinnedAppsList.length > 0
                     visible: PinsService.pins.length > 0 && hasUnpinned
                     width: 12
                     height: 40
@@ -345,7 +370,7 @@ PanelWindow {
 
                 Repeater {
                     id: unpinnedApps
-                    model: barWindow.getUnpinnedApps()
+                    model: DockSettingsService.showUnpinned ? barWindow.unpinnedAppsList : []
                     delegate: ShelfItem {
                         id: unpinnedItem
                         required property var modelData
@@ -360,9 +385,6 @@ PanelWindow {
             }
         }
 
-        // =========================================================
-        // RIGHT PILL: SYSTEM STATUS & CLOCK
-        // =========================================================
         RowLayout {
             id: rightSection
             anchors.right: parent.right
