@@ -1,9 +1,9 @@
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pipewire
-import Quickshell.Services.Notifications 
+import Quickshell.Services.Notifications
 import Quickshell.Services.SystemTray
-import Quickshell.Widgets
+import Quickshell.Widgets 
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -14,14 +14,17 @@ PopupWindow {
     id: qsRoot
 
     implicitWidth: 380
-    implicitHeight: currentView === "main" ? (mainLayout.implicitHeight + 36) : 420
-    
-    property bool isOpen: false
-    
-    color: "transparent"
-    grabFocus: true
+    implicitHeight: currentView === "main"
+        ? (mainLayout.implicitHeight + 36)
+        : 420
 
-    property string currentView: "main" 
+    property bool isOpen: false
+
+    color: "transparent"
+
+    signal openSettings()
+
+    property string currentView: "main"
     property string selectedWifiSsid: ""
     property string wifiPasswordInput: ""
 
@@ -41,22 +44,32 @@ PopupWindow {
         }
     }
 
-    Timer {
-        id: closeTimer
-        interval: 250
-        onTriggered: qsRoot.visible = false
+    Process {
+        id: powerProc
+    }
+
+    function executePowerAction(action) {
+        qsRoot.powerExpanded = false;
+        qsRoot.isOpen = false;
+        switch(action) {
+            case "poweroff":  powerProc.command = ["systemctl", "poweroff"]; break;
+            case "reboot":    powerProc.command = ["systemctl", "reboot"];   break;
+            case "suspend":   powerProc.command = ["systemctl", "suspend"];  break;
+            case "lock":      powerProc.command = ["hyprlock"];              break;
+            case "logout":    powerProc.command = ["hyprctl", "dispatch", "exit"]; break;
+            default: return;
+        }
+        powerProc.running = true;
     }
 
     onVisibleChanged: {
         if (!qsRoot.visible && qsRoot.isOpen) {
             qsRoot.isOpen = false;
-            closeTimer.stop();
         }
     }
 
     onIsOpenChanged: {
         if (isOpen) {
-            closeTimer.stop();
             qsRoot.visible = true;
             currentView = "main";
             selectedWifiSsid = "";
@@ -64,9 +77,7 @@ PopupWindow {
             powerExpanded = false;
             SystemService.refresh();
         } else {
-            if (qsRoot.visible) {
-                closeTimer.restart();
-            }
+            qsRoot.visible = false;
         }
     }
 
@@ -102,6 +113,7 @@ PopupWindow {
             visible: qsRoot.currentView === "main"
 
             RowLayout {
+                z: 99
                 Layout.fillWidth: true
                 spacing: 10
 
@@ -145,57 +157,35 @@ PopupWindow {
 
                 Item { Layout.fillWidth: true }
 
+                QsIconBtn {
+                    icon: "󰒓"
+                    tooltip: "Settings"
+                    onAct: qsRoot.openSettings()
+                }
+
                 Rectangle {
-                    id: powerMenu
-                    implicitWidth: qsRoot.powerExpanded ? 116 : 40 
-                    height: 40
-                    radius: 20
-                    color: qsRoot.powerExpanded ? ColorService.bgElevated : Qt.alpha(ColorService.accent, 0.15)
-                    border.color: qsRoot.powerExpanded ? Qt.rgba(1, 1, 1, 0.1) : Qt.alpha(ColorService.accent, 0.3)
+                    width: 40; height: 40; radius: 20
+                    color: qsRoot.powerExpanded
+                        ? Qt.alpha("#f28b82", 0.25)
+                        : (pwrBtnMa.containsMouse ? Qt.alpha("#f28b82", 0.18) : Qt.alpha("#f28b82", 0.1))
+                    border.color: qsRoot.powerExpanded ? Qt.alpha("#f28b82", 0.6) : "transparent"
                     border.width: 1
-                    clip: true
+                    Behavior on color { ColorAnimation { duration: 150 } }
 
-                    Behavior on implicitWidth { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
-                    Behavior on color { ColorAnimation { duration: 200 } }
+                    Text {
+                        anchors.centerIn: parent
+                        text: "󰐥"
+                        font.family: Theme.fontIcon
+                        font.pixelSize: 18
+                        color: "#f28b82"
+                    }
 
-                    RowLayout {
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.rightMargin: 4
-                        spacing: 4
-
-                        QsIconBtn {
-                            visible: qsRoot.powerExpanded
-                            icon: "󰍃"
-                            tooltip: "Log out"
-                            onAct: {
-                                qsRoot.powerExpanded = false;
-                                SystemService.logout();
-                            }
-                        }
-
-                        QsIconBtn {
-                            visible: qsRoot.powerExpanded
-                            icon: "󰜉"
-                            tooltip: "Restart"
-                            onAct: {
-                                qsRoot.powerExpanded = false;
-                                SystemService.reboot();
-                            }
-                        }
-
-                        QsIconBtn {
-                            icon: "󰐥"
-                            tooltip: qsRoot.powerExpanded ? "Power off" : "Power menu"
-                            danger: true
-                            onAct: {
-                                if (!qsRoot.powerExpanded) {
-                                    qsRoot.powerExpanded = true;
-                                } else {
-                                    SystemService.powerOff();
-                                }
-                            }
-                        }
+                    MouseArea {
+                        id: pwrBtnMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: qsRoot.powerExpanded = !qsRoot.powerExpanded
                     }
                 }
             }
@@ -333,73 +323,73 @@ PopupWindow {
                 }
             }
 
-            Rectangle {
-                id: backgroundAppsMenu
-                Layout.fillWidth: true
-                height: 64
-                radius: 20
-                color: ColorService.bgElevated
-                border.color: Qt.rgba(1, 1, 1, 0.06)
-                border.width: 1
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 10
-                    spacing: 12
-
-                    Rectangle {
-                        width: 44; height: 44; radius: 22
-                        color: SystemTray.items.values.length > 0 ? Qt.alpha(ColorService.accent, 0.15) : Qt.rgba(1, 1, 1, 0.08)
-                        Text {
-                            anchors.centerIn: parent
-                            text: "󰍜"
-                            font.family: Theme.fontIcon
-                            font.pixelSize: 20
-                            color: SystemTray.items.values.length > 0 ? ColorService.accent : ColorService.textPrimary
-                        }
-                    }
-
-                    Column {
-                        Layout.fillWidth: true
-                        spacing: 2
-                        Text {
-                            text: "Background Apps"
-                            color: ColorService.textPrimary
-                            font.family: Theme.fontMain
-                            font.bold: true
-                            font.pixelSize: 13
-                        }
-                        Text {
-                            text: SystemTray.items.values.length > 0 
-                                  ? SystemTray.items.values.length + " active app(s)"
-                                  : "No background apps"
-                            color: ColorService.textSecondary
-                            font.family: Theme.fontMain
-                            font.pixelSize: 11
-                        }
-                    }
-
-                    Rectangle {
-                        width: 32; height: 44; radius: 16
-                        color: trayArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
-                        Text {
-                            anchors.centerIn: parent
-                            text: "❯"
-                            font.family: Theme.fontMain
-                            font.pixelSize: 11
-                            font.bold: true
-                            color: ColorService.textSecondary
-                        }
-                        MouseArea {
-                            id: trayArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: qsRoot.currentView = "tray"
-                        }
-                    }
-                }
-            }
+			            Rectangle {
+			                id: backgroundAppsMenu
+			                Layout.fillWidth: true
+			                height: 64
+			                radius: 20
+			                color: ColorService.bgElevated
+			                border.color: Qt.rgba(1, 1, 1, 0.06)
+			                border.width: 1
+			
+			                RowLayout {
+			                    anchors.fill: parent
+			                    anchors.margins: 10
+			                    spacing: 12
+			
+			                    Rectangle {
+			                        width: 44; height: 44; radius: 22
+			                        color: SystemTray.items.values.length > 0 ? Qt.alpha(ColorService.accent, 0.15) : Qt.rgba(1, 1, 1, 0.08)
+			                        Text {
+			                            anchors.centerIn: parent
+			                            text: "󰍜"
+			                            font.family: Theme.fontIcon
+			                            font.pixelSize: 20
+			                            color: SystemTray.items.values.length > 0 ? ColorService.accent : ColorService.textPrimary
+			                        }
+			                    }
+			
+			                    Column {
+			                        Layout.fillWidth: true
+			                        spacing: 2
+			                        Text {
+			                            text: "Background Apps"
+			                            color: ColorService.textPrimary
+			                            font.family: Theme.fontMain
+			                            font.bold: true
+			                            font.pixelSize: 13
+			                        }
+			                        Text {
+			                            text: SystemTray.items.values.length > 0 
+			                                  ? SystemTray.items.values.length + " active app(s)"
+			                                  : "No background apps"
+			                            color: ColorService.textSecondary
+			                            font.family: Theme.fontMain
+			                            font.pixelSize: 11
+			                        }
+			                    }
+			
+			                    Rectangle {
+			                        width: 32; height: 44; radius: 16
+			                        color: trayArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+			                        Text {
+			                            anchors.centerIn: parent
+			                            text: "❯"
+			                            font.family: Theme.fontMain
+			                            font.pixelSize: 11
+			                            font.bold: true
+			                            color: ColorService.textSecondary
+			                        }
+			                        MouseArea {
+			                            id: trayArea
+			                            anchors.fill: parent
+			                            hoverEnabled: true
+			                            cursorShape: Qt.PointingHandCursor
+			                            onClicked: qsRoot.currentView = "tray" 
+			                        }
+			                    }
+			                }
+			            }
 
             Rectangle {
                 id: notifHistoryMenu
@@ -464,6 +454,173 @@ PopupWindow {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: qsRoot.currentView = "notifications"
+                        }
+                    }
+                }
+            }
+
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            visible: qsRoot.powerExpanded
+            z: 199
+            onClicked: qsRoot.powerExpanded = false
+        }
+
+        Rectangle {
+            id: powerOverlay
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 10
+            anchors.topMargin: 60
+            z: 200
+
+            implicitHeight: powerOverlayContent.implicitHeight + 24
+
+            radius: 22
+            color: Qt.rgba(
+                ColorService.bgBase.r * 0.6 + 0.35,
+                ColorService.bgBase.g * 0.6 + 0.05,
+                ColorService.bgBase.b * 0.6 + 0.05,
+                0.97
+            )
+            border.color: Qt.alpha("#f28b82", 0.45)
+            border.width: 1.5
+
+            layer.enabled: true
+
+            opacity: qsRoot.powerExpanded ? 1.0 : 0.0
+            scale: qsRoot.powerExpanded ? 1.0 : 0.92
+            visible: opacity > 0.01
+
+            Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+            Behavior on scale  { NumberAnimation { duration: 220; easing.type: Easing.OutBack  } }
+
+            ColumnLayout {
+                id: powerOverlayContent
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 16
+                spacing: 14
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    Rectangle {
+                        width: 32; height: 32; radius: 16
+                        color: Qt.alpha("#f28b82", 0.18)
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰐥"
+                            font.family: Theme.fontIcon
+                            font.pixelSize: 16
+                            color: "#f28b82"
+                        }
+                    }
+
+                    Text {
+                        text: "Power"
+                        font.family: Theme.fontMain
+                        font.pixelSize: 15
+                        font.bold: true
+                        color: "#f28b82"
+                        Layout.fillWidth: true
+                    }
+
+                    Rectangle {
+                        width: 28; height: 28; radius: 14
+                        color: closePwrOverlayMa.containsMouse
+                            ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.06)
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰅖"
+                            font.family: Theme.fontIcon
+                            font.pixelSize: 12
+                            color: ColorService.textSecondary
+                        }
+                        MouseArea {
+                            id: closePwrOverlayMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: qsRoot.powerExpanded = false
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: Qt.alpha("#f28b82", 0.2)
+                }
+
+                Row {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    Repeater {
+                        model: [
+                            { icon: "󰐥", label: "Power Off",  action: "poweroff", color: "#f28b82" },
+                            { icon: "󰑓", label: "Restart",    action: "reboot",   color: "#fdd663" },
+                            { icon: "󰒲", label: "Suspend",    action: "suspend",  color: "#78d9ec" },
+                            { icon: "󰌾", label: "Lock",       action: "lock",     color: "#81c995" },
+                            { icon: "󰍃", label: "Log Out",    action: "logout",   color: "#ff9d6f" }
+                        ]
+
+                        delegate: Rectangle {
+                            required property var modelData
+                            width: (powerOverlay.width - 32 - 8 * 4) / 5
+                            height: width + 6
+                            radius: 16
+                            color: pwrOverlayActMa.containsMouse
+                                ? Qt.alpha(modelData.color, 0.32)
+                                : Qt.alpha(modelData.color, 0.12)
+                            border.color: pwrOverlayActMa.containsMouse
+                                ? Qt.alpha(modelData.color, 0.7)
+                                : Qt.alpha(modelData.color, 0.3)
+                            border.width: 1.5
+
+                            Behavior on color { ColorAnimation { duration: 130 } }
+                            Behavior on border.color { ColorAnimation { duration: 130 } }
+                            scale: pwrOverlayActMa.pressed ? 0.93 : (pwrOverlayActMa.containsMouse ? 1.05 : 1.0)
+                            Behavior on scale { NumberAnimation { duration: 130; easing.type: Easing.OutBack } }
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 6
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: modelData.icon
+                                    font.family: Theme.fontIcon
+                                    font.pixelSize: 24
+                                    color: modelData.color
+                                }
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: modelData.label
+                                    font.family: Theme.fontMain
+                                    font.pixelSize: 9
+                                    font.bold: true
+                                    color: ColorService.textPrimary
+                                    horizontalAlignment: Text.AlignHCenter
+                                    width: parent.parent.width - 6
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+
+                            MouseArea {
+                                id: pwrOverlayActMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: qsRoot.executePowerAction(modelData.action)
+                            }
                         }
                     }
                 }
@@ -661,7 +818,6 @@ PopupWindow {
                 }
             }
         }
-
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 18
@@ -922,6 +1078,7 @@ PopupWindow {
                     
                     delegate: Rectangle {
                         id: notifDelegate
+                        
                         property var notif: modelData
 
                         width: ListView.view.width
@@ -1024,143 +1181,144 @@ PopupWindow {
         }
     }
 
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 18
-            spacing: 12
-            visible: qsRoot.currentView === "tray"
+	        ColumnLayout {
+	            anchors.fill: parent
+	            anchors.margins: 18
+	            spacing: 12
+	            visible: qsRoot.currentView === "tray"
+	
+	            RowLayout {
+	                Layout.fillWidth: true
+	                spacing: 10
+	
+	                QsIconBtn {
+	                    icon: "󰅁"
+	                    tooltip: "Back"
+	                    onAct: qsRoot.currentView = "main"
+	                }
+	
+	                Text {
+	                    text: "Background Apps"
+	                    color: ColorService.textPrimary
+	                    font.family: Theme.fontMain
+	                    font.pixelSize: 16
+	                    font.bold: true
+	                    Layout.fillWidth: true
+	                }
+	            }
+	
+	            ScrollView {
+	                id: trayScroll
+	                Layout.fillWidth: true
+	                Layout.fillHeight: true
+	                clip: true
+	
+	                ColumnLayout {
+	                    width: trayScroll.width
+	                    spacing: 6
+	
+	                    Repeater {
+	                        model: SystemTray.items
+	
+	                        delegate: Rectangle {
+	                            id: trayItemDelegate
+	                            required property var modelData
+	
+	                            Layout.fillWidth: true
+	                            height: 54
+	                            radius: 16
+	                            color: itemMouseArea.containsMouse ? ColorService.bgHover : ColorService.bgElevated
+	                            border.color: "transparent"
+	                            Behavior on color { ColorAnimation { duration: 150 } }
+	
+	                            RowLayout {
+	                                anchors.fill: parent
+	                                anchors.margins: 10
+	                                spacing: 12
+	
+	                                IconImage {
+	                                    width: 24
+	                                    height: 24
+	                                    source: modelData.icon
+	                                }
+	
+	                                Column {
+	                                    Layout.fillWidth: true
+	                                    spacing: 2
+	                                    Text {
+	                                        width: parent.width
+	                                        text: modelData.title !== "" ? modelData.title : (modelData.id !== "" ? modelData.id : "Unknown App")
+	                                        color: ColorService.textPrimary
+	                                        font.family: Theme.fontMain
+	                                        font.pixelSize: 13
+	                                        font.bold: true
+	                                        elide: Text.ElideRight
+	                                    }
+	                                    Text {
+	                                        text: modelData.tooltipTitle !== "" ? modelData.tooltipTitle : "Background Service"
+	                                        color: ColorService.textSecondary
+	                                        font.family: Theme.fontMain
+	                                        font.pixelSize: 11
+	                                        elide: Text.ElideRight
+	                                    }
+	                                }
+	                            }
+	
+	                            QsMenuAnchor {
+	                                id: menuAnchor
+	                                menu: modelData.menu
+	                                anchor {
+	                                    edges: Edges.Right
+	                                    gravity: Edges.Bottom | Edges.Right
+	                                }
+	                            }
+	
+	                            MouseArea {
+	                                id: itemMouseArea
+	                                anchors.fill: parent
+	                                acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+	                                hoverEnabled: true
+	                                cursorShape: Qt.PointingHandCursor
+	
+	                                onClicked: mouse => {
+	                                    if (mouse.button === Qt.RightButton) {
+	                                        if (modelData.menu) {
+	                                            
+	                                            menuAnchor.anchor.item = trayItemDelegate;
+	                                            menuAnchor.open();
+	                                        } else if (modelData.hasMenu) {
+	                                            let win = qsRoot.Window.window;
+	                                            if (win) {
+	                                                let pos = itemMouseArea.mapToItem(null, mouse.x, mouse.y);
+	                                                modelData.display(win, pos.x, pos.y);
+	                                            }
+	                                        } else {
+	                                            modelData.secondaryActivate();
+	                                        }
+	                                    } else if (mouse.button === Qt.LeftButton) {
+	                                        modelData.activate();
+	                                        qsRoot.isOpen = false; 
+	                                    } else if (mouse.button === Qt.MiddleButton) {
+	                                        modelData.secondaryActivate();
+	                                    }
+	                                }
+	                            }
+	                        }
+	                    }
+	                }
+	            }
+	
+	            Text {
+	                visible: SystemTray.items.values.length === 0
+	                text: "No apps running in the background."
+	                color: ColorService.textSecondary
+	                font.family: Theme.fontMain
+	                font.pixelSize: 13
+	                Layout.alignment: Qt.AlignHCenter
+	                Layout.topMargin: 20
+	            }
+	        }
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 10
-
-                QsIconBtn {
-                    icon: "󰅁"
-                    tooltip: "Back"
-                    onAct: qsRoot.currentView = "main"
-                }
-
-                Text {
-                    text: "Background Apps"
-                    color: ColorService.textPrimary
-                    font.family: Theme.fontMain
-                    font.pixelSize: 16
-                    font.bold: true
-                    Layout.fillWidth: true
-                }
-            }
-
-            ScrollView {
-                id: trayScroll
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                clip: true
-
-                ColumnLayout {
-                    width: trayScroll.width
-                    spacing: 6
-
-                    Repeater {
-                        model: SystemTray.items
-
-                        delegate: Rectangle {
-                            id: trayItemDelegate
-                            required property var modelData
-
-                            Layout.fillWidth: true
-                            height: 54
-                            radius: 16
-                            color: itemMouseArea.containsMouse ? ColorService.bgHover : ColorService.bgElevated
-                            border.color: "transparent"
-                            Behavior on color { ColorAnimation { duration: 150 } }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.margins: 10
-                                spacing: 12
-
-                                IconImage {
-                                    width: 24
-                                    height: 24
-                                    source: modelData.icon
-                                }
-
-                                Column {
-                                    Layout.fillWidth: true
-                                    spacing: 2
-                                    Text {
-                                        width: parent.width
-                                        text: modelData.title !== "" ? modelData.title : (modelData.id !== "" ? modelData.id : "Unknown App")
-                                        color: ColorService.textPrimary
-                                        font.family: Theme.fontMain
-                                        font.pixelSize: 13
-                                        font.bold: true
-                                        elide: Text.ElideRight
-                                    }
-                                    Text {
-                                        text: modelData.tooltipTitle !== "" ? modelData.tooltipTitle : "Background Service"
-                                        color: ColorService.textSecondary
-                                        font.family: Theme.fontMain
-                                        font.pixelSize: 11
-                                        elide: Text.ElideRight
-                                    }
-                                }
-                            }
-
-                            QsMenuAnchor {
-                                id: menuAnchor
-                                menu: modelData.menu
-                                anchor {
-                                    edges: Edges.Right
-                                    gravity: Edges.Bottom | Edges.Right
-                                }
-                            }
-
-                            MouseArea {
-                                id: itemMouseArea
-                                anchors.fill: parent
-                                acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-
-                                onClicked: mouse => {
-                                    if (mouse.button === Qt.RightButton) {
-                                        if (modelData.menu) {
-                                          
-                                            menuAnchor.anchor.item = trayItemDelegate;
-                                            menuAnchor.open();
-                                        } else if (modelData.hasMenu) {
-                                            let win = qsRoot.Window.window;
-                                            if (win) {
-                                                let pos = itemMouseArea.mapToItem(null, mouse.x, mouse.y);
-                                                modelData.display(win, pos.x, pos.y);
-                                            }
-                                        } else {
-                                            modelData.secondaryActivate();
-                                        }
-                                    } else if (mouse.button === Qt.LeftButton) {
-                                        modelData.activate();
-                                        qsRoot.isOpen = false;
-                                    } else if (mouse.button === Qt.MiddleButton) {
-                                        modelData.secondaryActivate();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            Text {
-                visible: SystemTray.items.values.length === 0
-                text: "No apps running in the background."
-                color: ColorService.textSecondary
-                font.family: Theme.fontMain
-                font.pixelSize: 13
-                Layout.alignment: Qt.AlignHCenter
-                Layout.topMargin: 20
-            }
-        }
 
     component QsIconBtn: Rectangle {
         id: iconBtn
