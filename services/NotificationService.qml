@@ -13,7 +13,6 @@ NotificationServer {
     actionsSupported: true
     imageSupported: true
 
-    // Force Quickshell to keep incoming notifications in memory
     onNotification: notif => {
         notif.tracked = true;
     }
