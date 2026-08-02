@@ -10,7 +10,6 @@ Item {
     id: root
     anchors.fill: parent
 
-    // ── State ───────────────────────────────────────────────────────────────
     property string wallpaperDir: "/home/" + (Quickshell.env("USER") || "zafran") + "/Pictures/Wallpapers"
     property var    wallpaperFiles: []
     property int    selectedIndex: -1
@@ -19,9 +18,7 @@ Item {
     property string statusMsg: ""
     property bool   statusOk: true
 
-    // ── Processes ────────────────────────────────────────────────────────────
 
-    // Discover image files from the wallpaper directory
     Process {
         id: lsProc
         command: ["bash", "-c",
@@ -36,7 +33,6 @@ Item {
         }
     }
 
-    // Read currently-active wallpaper from hyprpaper
     Process {
         id: currentWpProc
         command: ["bash", "-c",
@@ -54,7 +50,6 @@ Item {
         }
     }
 
-    // Reusable process for applying wallpaper — declared once, not dynamically created
     Process {
         id: applyProc
         stdout: StdioCollector { id: applyStdout }
@@ -70,19 +65,16 @@ Item {
                     root.statusMsg = "✗ Failed: " + (err.length > 0 ? err.substring(0, 80) : "exit " + exitCode);
                     root.statusOk = false;
                 }
-                // Auto-clear status after 4 seconds
                 statusClearTimer.restart();
             }
         }
     }
 
-    // Reusable process for opening folders
     Process {
         id: openDirProc
         command: ["xdg-open", root.wallpaperDir]
     }
 
-    // Reusable process for accent color override
     Process {
         id: matugenProc
         property string pendingColor: ""
@@ -113,7 +105,6 @@ Item {
 
     Component.onCompleted: { lsProc.running = true; }
 
-    // ── Layout ──────────────────────────────────────────────────────────────
     ScrollView {
         anchors.fill: parent
         contentWidth: availableWidth
@@ -128,7 +119,6 @@ Item {
 
             Item { height: 4 }
 
-            // Header
             ColumnLayout {
                 spacing: 4
                 Layout.fillWidth: true
@@ -149,7 +139,6 @@ Item {
                 }
             }
 
-            // ── Current Wallpaper Preview ─────────────────────────────────
             Rectangle {
                 Layout.fillWidth: true
                 height: 110
@@ -162,12 +151,10 @@ Item {
                     anchors.fill: parent
                     source: root.currentWallpaper.length > 0 ? "file://" + root.currentWallpaper : ""
                     fillMode: Image.PreserveAspectCrop
-                    smooth: false   // faster on weak GPU
+                    smooth: false 
                     asynchronous: true
                     sourceSize: Qt.size(700, 120)
                 }
-
-                // Gradient overlay
                 Rectangle {
                     anchors.bottom: parent.bottom
                     anchors.left: parent.left
@@ -211,7 +198,6 @@ Item {
                 }
             }
 
-            // ── Status bar ────────────────────────────────────────────────
             Rectangle {
                 Layout.fillWidth: true
                 height: 36
@@ -246,7 +232,6 @@ Item {
                 }
             }
 
-            // ── Wallpaper Grid Card ───────────────────────────────────────
             Rectangle {
                 Layout.fillWidth: true
                 implicitHeight: gridCardCol.implicitHeight + 28
@@ -259,7 +244,6 @@ Item {
                     anchors.margins: 14
                     spacing: 12
 
-                    // Card header row
                     RowLayout {
                         Layout.fillWidth: true
                         Text {
@@ -279,7 +263,6 @@ Item {
                         }
                         Item { Layout.fillWidth: true }
 
-                        // Refresh button
                         Rectangle {
                             width: 30; height: 30; radius: 15
                             color: refreshMa.containsMouse
@@ -300,8 +283,6 @@ Item {
                                 onClicked: { if (!lsProc.running) lsProc.running = true; }
                             }
                         }
-
-                        // Open folder button
                         Rectangle {
                             implicitWidth: openFolderTxt.implicitWidth + 20
                             height: 30; radius: 15
@@ -330,7 +311,6 @@ Item {
                         }
                     }
 
-                    // Empty state
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 8
@@ -355,9 +335,6 @@ Item {
                         Item { height: 12 }
                     }
 
-                    // Grid of thumbnails
-                    // Use a simple Grid instead of a Repeater inside ScrollView
-                    // to avoid nested scroll event conflicts
                     Grid {
                         id: wallGrid
                         Layout.fillWidth: true
@@ -374,7 +351,7 @@ Item {
                                 readonly property bool isSelected: root.selectedIndex === index
 
                                 width: (wallGrid.width - wallGrid.columnSpacing * (wallGrid.columns - 1)) / wallGrid.columns
-                                height: width * 0.5625  // 16:9
+                                height: width * 0.5625 
                                 radius: 12
                                 color: "transparent"
                                 border.color: isCurrentWp
@@ -388,19 +365,15 @@ Item {
                                     anchors.margins: parent.border.width
                                     source: "file://" + filePath
                                     fillMode: Image.PreserveAspectCrop
-                                    smooth: false  // faster thumbnail render
+                                    smooth: false 
                                     asynchronous: true
-                                    // Critical: constrain decode size to thumbnail dimensions
                                     sourceSize: Qt.size(220, 124)
-
-                                    // Fade in when loaded
                                     opacity: status === Image.Ready ? 1.0 : 0.0
                                     Behavior on opacity {
                                         NumberAnimation { duration: 150 }
                                     }
                                 }
 
-                                // Loading placeholder
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: parent.radius
@@ -408,7 +381,6 @@ Item {
                                     visible: parent.children[0].status !== Image.Ready
                                 }
 
-                                // Active badge
                                 Rectangle {
                                     visible: isCurrentWp
                                     anchors.top: parent.top
@@ -428,11 +400,9 @@ Item {
                                     }
                                 }
 
-                                // Hover overlay — only shown, not interactive
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: parent.radius
-                                    // Only show hover when not applying
                                     color: thumbMa.containsMouse && !root.isApplying
                                         ? Qt.rgba(0, 0, 0, 0.30)
                                         : (root.isApplying && isSelected
@@ -449,7 +419,6 @@ Item {
                                         color: "white"
                                     }
 
-                                    // Applying spinner
                                     Item {
                                         anchors.centerIn: parent
                                         visible: root.isApplying && isSelected
@@ -479,7 +448,6 @@ Item {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
-                                    // Crucial: don't steal events from parent scroll
                                     preventStealing: false
                                     onClicked: {
                                         if (!root.isApplying) {
@@ -493,7 +461,6 @@ Item {
                 }
             }
 
-            // ── Material You Accent Overrides ─────────────────────────────
             Rectangle {
                 Layout.fillWidth: true
                 implicitHeight: accentCol.implicitHeight + 24
@@ -566,7 +533,7 @@ Item {
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: {
-                                        // Use declared process, not Qt.createQmlObject
+                                       
                                         matugenProc.command = ["matugen", "color", "hex", modelData.color];
                                         if (!matugenProc.running) matugenProc.running = true;
                                     }
@@ -577,7 +544,6 @@ Item {
                 }
             }
 
-            // ── Wallpaper Directory Info ───────────────────────────────────
             Rectangle {
                 Layout.fillWidth: true
                 height: 50
