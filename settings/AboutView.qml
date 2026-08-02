@@ -76,12 +76,10 @@ ScrollView {
 
         Item { height: 4 }
 
-        // ── Hero Identity Card ─────────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
             height: 110
             radius: 24
-            // Gradient card
             gradient: Gradient {
                 orientation: Gradient.Horizontal
                 GradientStop { position: 0.0; color: Qt.rgba(ColorService.accent.r * 0.5, ColorService.accent.g * 0.5, ColorService.accent.b * 0.5, 0.22) }
@@ -94,7 +92,6 @@ ScrollView {
                 anchors.margins: 20
                 spacing: 18
 
-                // Avatar circle
                 Rectangle {
                     width: 68; height: 68; radius: 34
                     gradient: Gradient {
@@ -134,7 +131,6 @@ ScrollView {
                         }
                     }
 
-                    // Uptime badge
                     Rectangle {
                         visible: root.uptimeStr.length > 0
                         implicitWidth: uptimeRow.implicitWidth + 16
@@ -154,7 +150,6 @@ ScrollView {
             }
         }
 
-        // ── Hardware Card ──────────────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: hwCardCol.implicitHeight + 32
@@ -202,7 +197,6 @@ ScrollView {
             }
         }
 
-        // ── Environment Card ───────────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: envCardCol.implicitHeight + 32
@@ -251,7 +245,6 @@ ScrollView {
             }
         }
 
-        // ── Quickshell Config Card ─────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: qsCardCol.implicitHeight + 32
@@ -294,7 +287,6 @@ ScrollView {
                                 elide: Text.ElideRight; Layout.fillWidth: true
                             }
 
-                            // Accent swatch
                             Rectangle {
                                 visible: modelData.label === "Accent"
                                 width: 22; height: 22; radius: 11
@@ -307,7 +299,6 @@ ScrollView {
             }
         }
 
-        // ── Quick Actions ──────────────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: actionsCardCol.implicitHeight + 32
