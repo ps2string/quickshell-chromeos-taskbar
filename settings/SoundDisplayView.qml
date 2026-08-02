@@ -20,14 +20,12 @@ ScrollView {
 
         Item { height: 4 }
 
-        // ── Header ─────────────────────────────────────────────────────
         ColumnLayout {
             spacing: 4; Layout.fillWidth: true
             Text { text: "Sound & Display"; font.family: Theme.fontMain; font.pixelSize: 22; font.bold: true; color: ColorService.textPrimary }
             Text { text: "Volume, brightness, audio devices, and display toggles"; font.family: Theme.fontMain; font.pixelSize: 13; color: ColorService.textSecondary }
         }
 
-        // ── Volume & Brightness card ───────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: slidersCol.implicitHeight + 32
@@ -38,10 +36,8 @@ ScrollView {
             ColumnLayout {
                 id: slidersCol; anchors.fill: parent; anchors.margins: 18; spacing: 20
 
-                // Section label
                 Text { text: "Controls"; font.family: Theme.fontMain; font.pixelSize: 12; font.bold: true; color: ColorService.textSecondary; font.letterSpacing: 1.2 }
 
-                // ── Master Volume ─────────────────────────────────────
                 RowLayout {
                     Layout.fillWidth: true; spacing: 14
 
@@ -84,12 +80,10 @@ ScrollView {
                             property real val: SystemService.volume || 0
                             Connections { target: SystemService; function onVolumeChanged() { if (!volMouse.pressed) volWrapper.val = SystemService.volume || 0 } }
 
-                            // Track background
                             Rectangle {
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: parent.width; height: 6; radius: 3
                                 color: Qt.rgba(1,1,1,0.10)
-                                // Filled track
                                 Rectangle {
                                     width: parent.width * (volWrapper.val / 100)
                                     height: parent.height; radius: 3
@@ -98,7 +92,6 @@ ScrollView {
                                     Behavior on width { NumberAnimation { duration: 60 } }
                                 }
                             }
-                            // Thumb
                             Rectangle {
                                 anchors.verticalCenter: parent.verticalCenter
                                 x: Math.max(0, Math.min(parent.width - width, (parent.width - width) * (volWrapper.val / 100)))
@@ -121,7 +114,6 @@ ScrollView {
 
                 Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.06) }
 
-                // ── Brightness ────────────────────────────────────────
                 RowLayout {
                     Layout.fillWidth: true; spacing: 14
 
@@ -189,7 +181,6 @@ ScrollView {
             }
         }
 
-        // ── Display Toggles card ───────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: togglesCol.implicitHeight + 32
@@ -201,7 +192,6 @@ ScrollView {
 
                 Text { text: "Display"; font.family: Theme.fontMain; font.pixelSize: 12; font.bold: true; color: ColorService.textSecondary; font.letterSpacing: 1.2; bottomPadding: 14 }
 
-                // Night Light
                 RowLayout {
                     Layout.fillWidth: true; spacing: 14; height: 56
 
@@ -224,7 +214,6 @@ ScrollView {
 
                 Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.06) }
 
-                // Do Not Disturb
                 RowLayout {
                     Layout.fillWidth: true; spacing: 14; height: 56
 
@@ -247,7 +236,6 @@ ScrollView {
             }
         }
 
-        // ── Audio Output Devices card ──────────────────────────────────
         ColumnLayout {
             Layout.fillWidth: true; spacing: 10
 
@@ -303,7 +291,6 @@ ScrollView {
             }
         }
 
-        // ── Audio Input Devices card ───────────────────────────────────
         ColumnLayout {
             Layout.fillWidth: true; spacing: 10
 
