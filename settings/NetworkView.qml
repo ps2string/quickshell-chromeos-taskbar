@@ -17,7 +17,6 @@ ScrollView {
 
         Item { height: 4 }
 
-        // ── Header ─────────────────────────────────────────────────────
         RowLayout {
             Layout.fillWidth: true
             spacing: 14
@@ -56,7 +55,6 @@ ScrollView {
             }
         }
 
-        // ── Wi-Fi Master Toggle ────────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
             height: 68
@@ -100,7 +98,6 @@ ScrollView {
             }
         }
 
-        // ── Available Networks ─────────────────────────────────────────
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 10
@@ -119,7 +116,6 @@ ScrollView {
                     Layout.fillWidth: true
                 }
 
-                // Scan button
                 Rectangle {
                     width: 80; height: 30; radius: 15
                     color: scanMouse.containsMouse ? Qt.alpha(ColorService.accent, 0.2) : Qt.alpha(ColorService.accent, 0.1)
@@ -160,7 +156,6 @@ ScrollView {
                         anchors.margins: 14
                         spacing: 12
 
-                        // Signal icon with strength color
                         Text {
                             text: modelData.signal > 70 ? "󰤨" : (modelData.signal > 40 ? "󰤥" : (modelData.signal > 15 ? "󰤢" : "󰤟"))
                             font.family: Theme.fontIcon
@@ -185,7 +180,6 @@ ScrollView {
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }
-                                // Security badge
                                 Rectangle {
                                     visible: (modelData.security || "").length > 0 && !modelData.inUse
                                     implicitWidth: secTxt.implicitWidth + 10
@@ -202,7 +196,6 @@ ScrollView {
                                 }
                             }
 
-                            // Signal bar
                             Row {
                                 spacing: 2
                                 Repeater {
@@ -220,7 +213,6 @@ ScrollView {
                             }
                         }
 
-                        // Connect / Connected badge
                         Rectangle {
                             visible: modelData.inUse
                             implicitWidth: connectedTxt.implicitWidth + 18
@@ -274,7 +266,6 @@ ScrollView {
                 }
             }
 
-            // Empty state
             Rectangle {
                 visible: SystemService.wifiNetworks.length === 0
                 Layout.fillWidth: true
