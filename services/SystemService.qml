@@ -9,7 +9,6 @@ pragma Singleton
 Item {
     id: root
 
-
     property int    brightness:    70
     property int    batteryLevel:  100
     property bool   isCharging:    false
