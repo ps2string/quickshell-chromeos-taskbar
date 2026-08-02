@@ -14,7 +14,6 @@ PanelWindow {
 
     anchors { top: true; bottom: true; left: true; right: true }
 
-    // Fully transparent root – no dark overlay
     color: "transparent"
     visible: false
 
@@ -22,14 +21,12 @@ PanelWindow {
 
     onVisibleChanged: {
         if (!visible) {
-            // Deactivate the loader to free resources and reset view state
             viewLoader.active = false;
         } else {
             viewLoader.active = true;
         }
     }
 
-    // Backdrop click dismisses window
     MouseArea {
         anchors.fill: parent
         onClicked: root.visible = false
@@ -40,7 +37,6 @@ PanelWindow {
         focus: true
         Keys.onEscapePressed: root.visible = false
 
-        // Centered Window Card
         Rectangle {
             id: card
             anchors.centerIn: parent
@@ -56,7 +52,6 @@ PanelWindow {
             border.color: Qt.rgba(1, 1, 1, 0.1)
             border.width: 1
 
-            // Entrance animation
             property bool _ready: false
             Component.onCompleted: _ready = true
             opacity: root.visible ? 1.0 : 0.0
@@ -64,7 +59,6 @@ PanelWindow {
             Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
             Behavior on scale  { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
 
-            // Consume click events so backdrop doesn't dismiss on card click
             MouseArea {
                 anchors.fill: parent
                 onClicked: (mouse) => mouse.accepted = true
@@ -75,7 +69,6 @@ PanelWindow {
                 anchors.margins: 20
                 spacing: 16
 
-                // --- Top Header ---
                 RowLayout {
                     Layout.fillWidth: true
 
@@ -115,7 +108,6 @@ PanelWindow {
 
                         Item { Layout.fillWidth: true }
 
-                        // Close button
                         Rectangle {
                             width: 28; height: 28; radius: 14
                             color: closeMa.containsMouse
@@ -145,13 +137,11 @@ PanelWindow {
                     color: Qt.rgba(1, 1, 1, 0.07)
                 }
 
-                // --- Main Body Layout ---
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     spacing: 0
 
-                    // Sidebar Navigation
                     ColumnLayout {
                         Layout.fillWidth: false
                         Layout.preferredWidth: 210
@@ -159,13 +149,11 @@ PanelWindow {
                         Layout.fillHeight: true
                         spacing: 2
 
-                        // Use a plain ColumnLayout inside a ScrollView for nav items
                         ScrollView {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             contentWidth: availableWidth
                             clip: true
-                            // Disable the scrollbar flicker on hover
                             ScrollBar.vertical.policy: ScrollBar.AsNeeded
                             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
@@ -205,10 +193,8 @@ PanelWindow {
                                         border.color: isSelected ? Qt.alpha(ColorService.accent, 0.35) : "transparent"
                                         border.width: isSelected ? 1 : 0
 
-                                        // Simple color transitions (lighter = faster on N4020)
                                         Behavior on color { ColorAnimation { duration: 100 } }
 
-                                        // Active indicator bar
                                         Rectangle {
                                             anchors.left: parent.left
                                             anchors.verticalCenter: parent.verticalCenter
@@ -267,7 +253,6 @@ PanelWindow {
                         Layout.rightMargin: 8
                     }
 
-                    // Dynamic View Area
                     Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
@@ -275,7 +260,6 @@ PanelWindow {
                         Loader {
                             id: viewLoader
                             anchors.fill: parent
-                            // active is controlled by onVisibleChanged
                             active: root.visible
                             source: {
                                 switch (root.currentCategory) {
@@ -292,7 +276,6 @@ PanelWindow {
                                 }
                             }
 
-                            // Fast fade transition
                             opacity: status === Loader.Ready ? 1.0 : 0.0
                             Behavior on opacity { NumberAnimation { duration: 120 } }
                         }
