@@ -1,17 +1,38 @@
 import QtQuick
+import Quickshell
+import Quickshell.Io
 
 pragma Singleton
 
-// Static geometry and font tokens.
-// Dynamic colors are in services/ColorService.qml (live from matugen).
-QtObject {
-    // Fonts
-    readonly property string fontMain: "SF Pro Rounded"
-    readonly property string fontIcon: "JetBrainsMono Nerd Font"
+Item {
+    id: root
 
-    // Geometry radii
     readonly property int radiusSmall:  8
     readonly property int radiusMedium: 16
     readonly property int radiusLarge:  24
     readonly property int radiusPill:   999
+
+    FileView {
+        id: fileView
+        path: Quickshell.env("HOME") + "/.config/quickshell/theme-settings.json"
+        
+        watchChanges: true
+        onFileChanged: reload()
+        onAdapterUpdated: writeAdapter()
+
+        adapter: JsonAdapter {
+            id: themeAdapter
+            property string fontMain: "SF Pro Rounded"
+            property string fontIcon: "JetBrainsMono Nerd Font"
+            property real uiScale: 1.0
+        }
+    }
+
+    property alias fontMain: themeAdapter.fontMain
+    property alias fontIcon: themeAdapter.fontIcon
+    property alias uiScale: themeAdapter.uiScale
+
+    function save() {
+        fileView.writeAdapter();
+    }
 }
