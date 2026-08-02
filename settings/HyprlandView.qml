@@ -56,12 +56,10 @@ ScrollView {
         }
     }
 
-    // Declared process for live hyprland keyword changes
     Process {
         id: hyprKwProc
     }
 
-    // Declared process for opening config file
     Process {
         id: openCfgProc
     }
@@ -79,14 +77,12 @@ ScrollView {
 
         Item { height: 4 }
 
-        // Header
         ColumnLayout {
             spacing: 4; Layout.fillWidth: true
             Text { text: "Hyprland"; font.family: Theme.fontMain; font.pixelSize: 22; font.bold: true; color: ColorService.textPrimary }
             Text { text: "Live compositor tweaks, keybindings, workspace rules"; font.family: Theme.fontMain; font.pixelSize: 13; color: ColorService.textSecondary }
         }
 
-        // --- Live Tweaks ---
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: tweaksCol.implicitHeight + 28
@@ -98,7 +94,6 @@ ScrollView {
                 Text { text: "Live Tweaks"; font.family: Theme.fontMain; font.pixelSize: 14; font.bold: true; color: ColorService.textPrimary }
                 Text { text: "Changes apply instantly. Permanent changes require editing hyprland.conf"; font.family: Theme.fontMain; font.pixelSize: 12; color: ColorService.textSecondary; wrapMode: Text.WordWrap; Layout.fillWidth: true }
 
-                // Gaps In
                 RowLayout { Layout.fillWidth: true; spacing: 12
                     Rectangle { width: 36; height: 36; radius: 18; color: Qt.alpha(ColorService.accent, 0.15)
                         Text { anchors.centerIn: parent; text: "󰘕"; font.family: Theme.fontIcon; font.pixelSize: 14; color: ColorService.accent }
@@ -127,7 +122,6 @@ ScrollView {
 
                 Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.06) }
 
-                // Gaps Out
                 RowLayout { Layout.fillWidth: true; spacing: 12
                     Rectangle { width: 36; height: 36; radius: 18; color: Qt.alpha(ColorService.accent, 0.15)
                         Text { anchors.centerIn: parent; text: "󰘖"; font.family: Theme.fontIcon; font.pixelSize: 14; color: ColorService.accent }
@@ -156,7 +150,6 @@ ScrollView {
 
                 Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.06) }
 
-                // Border Size
                 RowLayout { Layout.fillWidth: true; spacing: 12
                     Rectangle { width: 36; height: 36; radius: 18; color: Qt.alpha(ColorService.accent, 0.15)
                         Text { anchors.centerIn: parent; text: "󰢚"; font.family: Theme.fontIcon; font.pixelSize: 14; color: ColorService.accent }
@@ -185,7 +178,6 @@ ScrollView {
 
                 Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(1,1,1,0.06) }
 
-                // Animations toggle
                 RowLayout { Layout.fillWidth: true; spacing: 12
                     Rectangle { width: 36; height: 36; radius: 18; color: Qt.alpha(ColorService.accent, 0.15)
                         Text { anchors.centerIn: parent; text: "󰚀"; font.family: Theme.fontIcon; font.pixelSize: 14; color: ColorService.accent }
@@ -205,7 +197,6 @@ ScrollView {
             }
         }
 
-        // --- Keybindings ---
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: kbCol.implicitHeight + 28
@@ -255,7 +246,6 @@ ScrollView {
             }
         }
 
-        // --- Open Config ---
         Rectangle {
             Layout.fillWidth: true; height: 52; radius: 16
             color: openCfgMouse.containsMouse ? Qt.alpha(ColorService.accent, 0.15) : ColorService.bgSurface
