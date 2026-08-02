@@ -368,10 +368,6 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 10
 
-            SystemTray {
-                Layout.alignment: Qt.AlignVCenter
-            }
-
             Rectangle {
                 id: statusPill
                 Layout.alignment: Qt.AlignVCenter
