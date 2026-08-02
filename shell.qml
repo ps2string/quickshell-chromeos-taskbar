@@ -9,6 +9,7 @@ import "bar"
 import "launcher"
 import "quicksettings"
 import "services"
+import "settings"
 
 Scope {
     id: root
@@ -154,6 +155,15 @@ Scope {
                             height: Math.round(quickSettings.implicitHeight)
                         }
                     }
+
+                    onOpenSettings: {
+                        quickSettings.isOpen = false;
+                        settingsWindow.visible = true;
+                    }
+                }
+
+                SettingsWindow {
+                    id: settingsWindow
                 }
             }
         }
