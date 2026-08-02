@@ -1,3 +1,4 @@
+// DT: 08:14:31AM-GMT+0800
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
